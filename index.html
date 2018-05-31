@@ -1,0 +1,56 @@
+<html>
+
+<!--
+____    ____  _______  _______
+\   \  /   / |   ____||   ____|
+ \   \/   /  |  |__   |  |__
+  \_    _/   |   __|  |   __|
+    |  |     |  |____ |  |____
+    |__|     |_______||_______|
+-->
+
+<head>
+<meta charset="UTF-8">
+<title>WordNet</title>
+<script type="text/javascript" src="https://code.jquery.com/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="https://code.jquery.com/ui/1.8.21/jquery-ui.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.7.1/themes/base/jquery-ui.css" />
+<link rel="stylesheet" type="text/css" href="css/normalize.css" />
+<link rel="stylesheet" type="text/css" href="css/vicons-font.css" />
+<link rel="stylesheet" type="text/css" href="css/base.css" />
+<link rel="stylesheet" type="text/css" href="css/buttons.css" />
+<link rel="stylesheet" type="text/css" href="css/textbox.css" />
+
+</head>
+
+<body>
+
+
+ <div class=menu style="width: 300px">
+
+     <h1 id="count" style="text-align: center; background-color: rgb(230, 170, 100); opacity: 0.5 ; height:50px">yee</h1>
+     <div id="text" style="text-align: center; z-index: -1">文字</div>
+     </br>
+     <div id="slider-range-max" style="width: 90%;margin: 0 auto;"></div>
+     <div class="group" style="float: right">
+         <br><br>
+         <input type="text" id="userName" required >
+         <span class="highlight"></span>
+         <span class="bar"></span>
+         <label>輸入你的名字</label>
+     </div>
+     <button id="submit" class="button button--wayra button--border-medium button--text-upper button--size-s button--text-thick button--inverted" onclick="clickEvent(this)">送出</button>
+     <button id="details" class="button button--wayra button--border-medium button--text-upper button--size-s button--text-thick button--inverted" onclick="detailsEvent(this)">說明</button>
+     <button id="rank" class="button button--wayra button--border-medium button--text-upper button--size-s button--text-thick button--inverted" onclick="rankEvent(this)">排行榜</button>
+
+
+
+</div>
+
+</body>
+
+<script type="text/javascript" src="js/index.js"></script>
+
+</html>
