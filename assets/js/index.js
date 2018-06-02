@@ -3,7 +3,12 @@ $.ajaxSettings.async = false;
 //USER NAME
 var userName = localStorage['userName'];
 if(!userName){
-    swal("請輸入你的名字！", "框框可以滑條下方找到：）","info");
+    swal({
+        title: "歡迎",
+        text: "請先輸入姓名，使用方法可以在下方說明按鈕中找到！：）",
+        type: "info",
+        confirmButtonText: '好的'
+    });
 }else{
     document.getElementById("userName").value = userName;
 }
@@ -14,6 +19,13 @@ if(!count){
     count = 0;
 }else{
     document.getElementById('count').innerHTML = count;
+    if(count != 0 && count%100 == 0){
+        swal({
+            title: '恭喜',
+            text: '離下一個一百又更近一步了呢！',
+            type: 'warning'
+        })
+    }
 }
 
 //Get text
@@ -44,7 +56,8 @@ function clickEvent(e) {
         showCancelButton: true,
         confirmButtonColor: '#49be2c',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'OK'
+        confirmButtonText: 'OK',
+        cancelButtonText: '不要',
     }).then((result) => {
         if (result.value) {
             var googleForm = 'https://docs.google.com/forms/u/2/d/e/1FAIpQLSdFdrcjmr3yrpMdQ5C9SQ_1PMZU-LcmdZDBtmD5xXD7Vg0tVQ/formResponse?';
@@ -74,23 +87,58 @@ function clickEvent(e) {
             }).then((value) => {
                 location.reload();
             });
+        } else if(result.dismiss === swal.DismissReason.cancel){
+            swal({
+                title: '已取消',
+                text: '請確認後再按送出。',
+                type: 'error'
+            })
         }
     })
 }
 
 function detailsEvent(e) {
-    swal({
-        title: '這是個說明',
-        text: '按照你的感受來拉動滑條評分！YEE！',
-        type: 'warning',
-        width: 600,
-        padding: '3em',
-        background: '#fff url(https://sweetalert2.github.io/images/trees.png)',
-        backdrop: `
-        rgba(0,0,123,0.4)
-        url("https://sweetalert2.github.io/images/nyan-cat.gif")
-        center left
-        no-repeat
-        `
+    swal.mixin({
+        confirmButtonText: 'Next &rarr;',
+        showCancelButton: true,
+        progressSteps: ['1', '2', '3']
+    }).queue([
+        {
+            title: '第一步',
+            text: '請先填入你的名字。',
+            imageUrl: 'images/1.gif',
+            imageWidth: 400,
+            imageHeight: 200
+        },
+        {
+            title: '第二步',
+            text: '觀察句子並憑感受拉動滑條。',
+            imageUrl: 'images/2.gif',
+            imageWidth: 400,
+            imageHeight: 200
+        },
+        {
+            title: '第三步',
+            text: '按下送出的按鈕。',
+            imageUrl: 'images/3.gif',
+            imageWidth: 400,
+            imageHeight: 200
+        }
+    ]).then((result) => {
+        if (result.value) {
+            swal({
+                title: 'All done!',
+                text: '做得好！我們可以開始了！',
+                type: 'success',
+                confirmButtonText: 'Go！',
+                backdrop: `
+                rgba(0,0,123,0.4)
+                url("https://sweetalert2.github.io/images/nyan-cat.gif")
+                top left
+                no-repeat
+                `
+            })
+        }
     })
+
 }
