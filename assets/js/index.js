@@ -26,7 +26,7 @@ try{
   count = document.cookie.split('count=')[1].split(';')[0];
   document.getElementById('count').innerHTML = count;
 }catch(err){
-  if(!count || count.toLowerCase()=='nan' ){
+  if(!count || count=='NaN' || count=='NAN'){
     count = 0;
     document.getElementById('count').innerHTML = count;
   }else if(count>=0){
