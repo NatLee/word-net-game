@@ -31,16 +31,15 @@ if(!count){
 //Get text
 
 var text = $.get('https://word-net-flask.herokuapp.com/')
-if(!text.responseText){
-  var textJsonUrl = 'https://spreadsheets.google.com/feeds/list/1YvvLFdpnt-w-JQe7z5R-Gda39jN-wSOEYyCvRxKZnZw/o429udt/public/full?alt=json';
-  var json = $.get(textJsonUrl);
-  var obj = JSON.parse(json.responseText);
-  var list = obj['feed']['entry']
-  var randNumber = Math.random() * list.length
-  var intRandomNumber = parseInt(randNumber)
-  var text = list[intRandomNumber]['gsx\$textdata']['\$t'];
-}
-
+/*
+var textJsonUrl = 'https://spreadsheets.google.com/feeds/list/1YvvLFdpnt-w-JQe7z5R-Gda39jN-wSOEYyCvRxKZnZw/o429udt/public/full?alt=json';
+var json = $.get(textJsonUrl);
+var obj = JSON.parse(json.responseText);
+var list = obj['feed']['entry']
+var randNumber = Math.random() * list.length
+var intRandomNumber = parseInt(randNumber)
+var text = list[intRandomNumber]['gsx\$textdata']['\$t'];
+*/
 document.getElementById('text').innerHTML = text.responseText;
 
 // Set slider
