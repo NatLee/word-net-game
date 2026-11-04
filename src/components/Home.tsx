@@ -38,7 +38,7 @@ export function Home({ name, total, xp, runs, dailyDone, dailyShareText, packs, 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-8 sm:gap-10">
       <div className="animate-rise pt-2 text-center sm:pt-6">
-        <p className="mb-3 text-sm font-semibold tracking-[0.25em] text-slate-500 dark:text-slate-400">讀一句話 · 撒一張網</p>
+        <p className="mb-3 text-sm font-semibold tracking-[0.25em] text-slate-600 dark:text-slate-400">讀一句話 · 撒一張網</p>
         <h1 className="font-display text-4xl leading-tight font-black tracking-tight text-balance sm:text-6xl">
           這句話，<span className="text-mood">有多開心？</span>
         </h1>
