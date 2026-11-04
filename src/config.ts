@@ -71,20 +71,3 @@ export const GAME_TITLE = 'Word Net';
 
 /** Where the source code lives (footer link). */
 export const SOURCE_URL = 'https://github.com/NatLee/word-net-game';
-
-/**
- * Where "送出標註" sends a player's answers: the Google Form the 2018 version used. It still
- * accepted responses on 2026-11-04 (fields userName, text, score). Set to `null` to hide the
- * button; exporting JSON/CSV keeps working either way.
- */
-export const ANNOTATION_FORM: GoogleFormTarget | null = {
-  action: 'https://docs.google.com/forms/d/e/1FAIpQLSdFdrcjmr3yrpMdQ5C9SQ_1PMZU-LcmdZDBtmD5xXD7Vg0tVQ/formResponse',
-  fields: { name: 'entry.1306234642', text: 'entry.404300076', score: 'entry.43544314' },
-};
-
-export interface GoogleFormTarget {
-  /** The form's `formResponse` URL. */
-  action: string;
-  /** Input name (`entry.<id>`) of each question. */
-  fields: { name: string; text: string; score: string };
-}

@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App.tsx';
-import { ANNOTATION_FORM, MODES, RUSH_REVEAL_MS } from './config.ts';
+import { MODES, RUSH_REVEAL_MS } from './config.ts';
 import { storageKey, writeStored } from './lib/storage.ts';
 import { media } from './test/setup.ts';
 import type { Annotation, Sentence } from './types.ts';
@@ -184,52 +184,6 @@ describe('milestones', () => {
     const dialog = screen.getByRole('dialog', { name: '恭喜！' });
     expect(dialog).toHaveTextContent('你已經判斷了 100 句！');
     expect(dialog).toHaveTextContent('離下一個一百又更近一步了呢！');
-  });
-});
-
-describe('my annotations', () => {
-  async function withTwoAnswers() {
-    const user = setup();
-    await user.click(screen.getByRole('button', { name: /開始經典/ }));
-    await answer(user, '7');
-    await user.keyboard('{Enter}');
-    await answer(user, '3');
-    await user.click(screen.getByRole('button', { name: '離開' }));
-    await user.click(screen.getByRole('button', { name: '我的標註' }));
-    return { user, dialog: screen.getByRole('dialog', { name: '我的標註' }) };
-  }
-
-  it('downloads them as JSON and CSV', async () => {
-    const createObjectURL = vi.fn((blob: Blob) => (void blob, 'blob:test'));
-    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
-    const clicks = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
-    const { user, dialog } = await withTwoAnswers();
-
-    await user.click(within(dialog).getByRole('button', { name: /JSON/ }));
-    const json = JSON.parse(await createObjectURL.mock.calls[0][0].text());
-    expect(json).toMatchObject({ count: 2, annotations: [{ guess: 0.5, reference: 0.5, name: '小明', mode: 'classic' }, { guess: -0.5 }] });
-
-    await user.click(within(dialog).getByRole('button', { name: /CSV/ }));
-    const csv = await createObjectURL.mock.calls[1][0].text();
-    expect(csv.split('\r\n')[0]).toBe('at,name,mode,sentenceId,text,guess,reference,distance,sentAt');
-    expect(clicks).toHaveBeenCalledTimes(2);
-  });
-
-  it('sends the unsent ones to the Google Form only after the player confirms', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null));
-    const { user, dialog } = await withTwoAnswers();
-
-    await user.click(within(dialog).getByRole('button', { name: '送出 2 句' }));
-    expect(within(dialog).getByText(/你確定嗎？/)).toBeInTheDocument();
-    await user.click(within(dialog).getByRole('button', { name: '不要' }));
-    expect(fetchSpy).not.toHaveBeenCalled();
-
-    await user.click(within(dialog).getByRole('button', { name: '送出 2 句' }));
-    await user.click(within(dialog).getByRole('button', { name: '確定送出' }));
-    expect(await within(dialog).findByText('已送出 2 句，請繼續努力！')).toBeInTheDocument();
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
-    expect(fetchSpy.mock.calls[0]).toEqual([ANNOTATION_FORM!.action, expect.objectContaining({ method: 'POST', mode: 'no-cors' })]);
-    expect(saved('annotations').every((a: Annotation) => a.sentAt === now().toISOString())).toBe(true);
   });
 });
 

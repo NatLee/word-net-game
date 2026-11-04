@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { LEADERBOARD_SIZE, MILESTONE_EVERY, MODES, SOURCE_URL } from './config.ts';
 import { Celebration } from './components/Celebration.tsx';
-import { Annotations, Leaderboard, Settings, Welcome } from './components/dialogs.tsx';
+import { Leaderboard, Settings, Welcome } from './components/dialogs.tsx';
 import { Header, type Panel } from './components/Header.tsx';
 import { Home } from './components/Home.tsx';
 import { Play } from './components/Play.tsx';
@@ -168,17 +168,6 @@ export function App({ pool, now = () => new Date() }: AppProps) {
       )}
       {name && panel === 'tutorial' && <Tutorial onClose={() => setPanel(null)} />}
       {name && panel === 'leaderboard' && <Leaderboard runs={runs} annotations={annotations} onClose={() => setPanel(null)} />}
-      {name && panel === 'annotations' && (
-        <Annotations
-          annotations={annotations}
-          now={now}
-          onSent={(sent) => {
-            const stamps = new Map(sent.map((a) => [`${a.at}|${a.sentenceId}`, a.sentAt]));
-            setAnnotations((list) => list.map((a) => ({ ...a, sentAt: a.sentAt ?? stamps.get(`${a.at}|${a.sentenceId}`) })));
-          }}
-          onClose={() => setPanel(null)}
-        />
-      )}
       {name && panel === 'settings' && (
         <Settings
           name={name}

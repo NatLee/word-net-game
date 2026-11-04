@@ -32,7 +32,7 @@ export interface SentencePack {
   sentences: Sentence[];
 }
 
-/** One answered sentence, kept on this device and exportable as JSON/CSV. */
+/** One answered sentence, kept on this device. */
 export interface Annotation {
   sentenceId: string;
   text: string;
@@ -42,8 +42,6 @@ export interface Annotation {
   name: string;
   /** ISO 8601 time of the answer. */
   at: string;
-  /** ISO 8601 time it was sent to the Google Form, if it was. */
-  sentAt?: string;
 }
 
 /** A finished run on the device leaderboard. */
