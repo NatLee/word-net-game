@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "packs": "node --experimental-strip-types --no-warnings=ExperimentalWarning src/data/pack-stats.ts",
     "check": "npm run lint && npm run typecheck && npm run test && vite build"
   },
   "dependencies": {
