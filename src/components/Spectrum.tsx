@@ -1,7 +1,7 @@
 import { forwardRef, useRef, type KeyboardEvent, type PointerEvent } from 'react';
 import { KEYBOARD, MOOD_BANDS, SCALE } from '../config.ts';
 import { digitValue, percentOf, valueAt } from '../game/scale.ts';
-import { formatScore, moodLabel } from '../game/scoring.ts';
+import { formatScore, keepsCombo, moodLabel } from '../game/scoring.ts';
 import type { Tier } from '../types.ts';
 import { TIER_STYLE } from './tiers.ts';
 import { Face } from './ui.tsx';
@@ -21,6 +21,13 @@ interface SpectrumProps {
  * or use the keyboard: arrows step 0.05, Shift+arrows and PageUp/PageDown step 0.25, Home/End
  * jump to the ends, 1–9 jump to fixed points, Enter or Space locks the guess.
  */
+/** Where the burst particles fly, as offsets in px: an even ring, so it looks the same every time. */
+const BURST = Array.from({ length: 12 }, (_, i) => {
+  const angle = (i / 12) * Math.PI * 2;
+  const reach = i % 2 ? 34 : 52;
+  return { dx: `${Math.round(Math.cos(angle) * reach)}px`, dy: `${Math.round(Math.sin(angle) * reach)}px` };
+});
+
 export const Spectrum = forwardRef<HTMLDivElement, SpectrumProps>(function Spectrum({ value, onChange, onNudge, onCommit, reveal }, ref) {
   const track = useRef<HTMLDivElement>(null);
   const locked = Boolean(reveal);
@@ -122,7 +129,7 @@ export const Spectrum = forwardRef<HTMLDivElement, SpectrumProps>(function Spect
 
           {/* The net. */}
           <span
-            className={`absolute top-1/2 grid size-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/25 ring-4 ring-white shadow-xl shadow-slate-900/30 backdrop-blur-sm transition-[left] duration-75 dark:ring-white/90 ${locked ? '' : 'hover:scale-105'}`}
+            className={`absolute top-1/2 grid size-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/25 ring-4 ring-white shadow-xl shadow-slate-900/30 backdrop-blur-sm transition-[left] duration-75 dark:ring-white/90 ${locked ? 'animate-cast' : 'hover:scale-105'}`}
             style={{ left: `${guessAt}%` }}
             aria-hidden="true"
           >
@@ -144,6 +151,17 @@ export const Spectrum = forwardRef<HTMLDivElement, SpectrumProps>(function Spect
                   style={{ left: `${refAt}%` }}
                   aria-hidden="true"
                 />
+              )}
+              {keepsCombo(reveal.tier) && (
+                <span className="absolute top-1/2 z-20" style={{ left: `${refAt}%` }} aria-hidden="true">
+                  {BURST.map((p, i) => (
+                    <span
+                      key={i}
+                      className={`absolute size-2 animate-burst rounded-full ${tier.bg}`}
+                      style={{ ['--dx' as string]: p.dx, ['--dy' as string]: p.dy }}
+                    />
+                  ))}
+                </span>
               )}
               <span
                 className={`absolute top-1/2 z-10 size-6 animate-drop rounded-full ring-4 ring-white ${tier.bg} shadow-lg dark:ring-slate-950`}

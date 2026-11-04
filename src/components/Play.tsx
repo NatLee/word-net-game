@@ -85,7 +85,7 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
       {session.timeLeftMs !== null ? (
         <TimeBar timeLeftMs={session.timeLeftMs} totalMs={(MODES[mode].seconds ?? 0) * 1000} />
       ) : session.lives !== null ? (
-        <Hearts lives={session.lives} max={MODES[mode].lives ?? session.lives} />
+        <Hearts key={session.round} lives={session.lives} max={MODES[mode].lives ?? session.lives} change={result?.lifeChange ?? 0} />
       ) : (
         <ol className="flex gap-1.5" aria-label={`第 ${session.round + 1} 句，共 ${total} 句`}>
           {Array.from({ length: total ?? 0 }, (_, i) => {
@@ -125,6 +125,15 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
         />
       </div>
 
+      {result && (
+        <div
+          key={`flash-${session.round}`}
+          className="pointer-events-none fixed inset-0 z-30 animate-flash"
+          style={{ boxShadow: `inset 0 0 160px 28px color-mix(in oklab, ${TIER_STYLE[result.tier].glow} 55%, transparent)` }}
+          aria-hidden="true"
+        />
+      )}
+
       <div aria-live="polite" className="sr-only">
         {result && `${TIER_INFO[result.tier].label}！參考分數 ${formatScore(result.sentence.score)}，你猜 ${formatScore(result.guess)}，得到 ${result.points} 分。`}
       </div>
@@ -143,17 +152,33 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
   );
 }
 
-function Hearts({ lives, max }: { lives: number; max: number }) {
+/** The hearts of a mode with lives; `change` animates the heart that was just lost (-1) or won (+1). */
+function Hearts({ lives, max, change }: { lives: number; max: number; change: number }) {
+  const animate = (i: number) => (change < 0 && i === lives ? 'animate-heartbreak' : change > 0 && i === lives - 1 ? 'animate-pop' : '');
   return (
     <div className="flex items-center justify-center gap-1.5" role="img" aria-label={`剩下 ${lives} 顆心，共 ${max} 顆`}>
       {Array.from({ length: max }, (_, i) => (
         <Heart
           key={i}
-          className={`size-7 transition duration-300 ${i < lives ? 'fill-miss text-miss' : 'scale-75 text-slate-300 dark:text-slate-600'}`}
+          className={`size-7 transition duration-300 ${i < lives ? 'fill-miss text-miss' : 'scale-75 text-slate-300 dark:text-slate-600'} ${animate(i)}`}
           aria-hidden="true"
         />
       ))}
     </div>
+  );
+}
+
+/** A number that flips in one character at a time, like a scoreboard. */
+function Flip({ text, delayMs }: { text: string; delayMs: number }) {
+  return (
+    <span className="inline-flex [perspective:400px]">
+      <span className="sr-only">{text}</span>
+      {[...text].map((char, i) => (
+        <span key={i} aria-hidden="true" className="inline-block animate-flip" style={{ animationDelay: `${delayMs + i * 70}ms` }}>
+          {char}
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -189,13 +214,15 @@ function Result({
     <div className={`glass animate-rise rounded-3xl p-5 ring-2 sm:p-6 ${style.ring} ${result.tier === 'miss' ? 'animate-shake' : ''}`}>
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <div>
-          <p className={`font-display text-3xl font-black tracking-tight sm:text-4xl ${style.text}`}>{TIER_INFO[result.tier].label}！</p>
+          <p className={`origin-left animate-slam font-display text-3xl font-black tracking-tight sm:text-4xl ${style.text}`}>{TIER_INFO[result.tier].label}！</p>
           <p className="mt-1 text-sm text-slate-600 tabular-nums dark:text-slate-300">
             參考 {formatScore(result.sentence.score)}｜你 {formatScore(result.guess)}｜差距 {result.distance.toFixed(2)}
           </p>
         </div>
-        <p className="animate-pop text-right font-display tabular-nums">
-          <span className="text-4xl font-black">+{result.points}</span>
+        <p className="text-right font-display tabular-nums">
+          <span className="text-4xl font-black">
+            <Flip text={`+${result.points}`} delayMs={350} />
+          </span>
           {result.multiplier > 1 && (
             <span className="ml-2 text-sm font-semibold text-orange-600 dark:text-orange-300">
               {result.base} × {result.multiplier} 連擊
