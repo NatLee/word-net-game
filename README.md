@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/hero-dark.png">
-    <img src="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/hero-light.png" alt="Word Net：讀一句話（例如「這部電影好看到我睡著了兩次。」），把網子撒在難過到開心的刻度上，揭曉參考分數 -0.50，猜 -0.45 拿到「完美！」+125 分（100 × 1.25 連擊）" width="960">
+    <img src="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/hero-light.png" alt="Word Net：讀一句話（例如「這部電影好看到我睡著了兩次。」），把網子撒在難過到開心的刻度上，揭曉參考分數 -0.50，猜 -0.45 拿到「完美！」+125 分（100 × 1.25 連擊）。五種玩法：經典、限時、生存、每日挑戰、雙人對戰" width="960">
   </picture>
 </p>
 
@@ -9,36 +9,44 @@
   <a href="https://github.com/NatLee/word-net-game/actions/workflows/deploy.yml"><img src="https://github.com/NatLee/word-net-game/actions/workflows/deploy.yml/badge.svg" alt="Deploy to GitHub Pages"></a>
   <a href="https://github.com/NatLee/word-net-game/actions/workflows/ci.yml"><img src="https://github.com/NatLee/word-net-game/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://natlee.github.io/word-net-game/"><img src="https://img.shields.io/badge/play-natlee.github.io%2Fword--net--game-8b5cf6" alt="Play on GitHub Pages"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/code-MIT-22c55e" alt="Code: MIT"></a>
+  <a href="src/data/packs/LICENSE"><img src="https://img.shields.io/badge/sentences-CC_BY_4.0-f59e0b" alt="Sentences: CC BY 4.0"></a>
   <img src="https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white" alt="React 19">
   <img src="https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4">
 </p>
 
-**Word Net** 是一個猜情緒的網頁小遊戲。畫面上出現一句話，你把網子拖到「難過 ↔ 開心」之間你覺得的位置，按下「撒網！」，參考分數就會落下來，越接近分數越高，連續猜準還有連擊加成。不用安裝，打開就能玩：**<https://natlee.github.io/word-net-game/>**
+**Word Net** 是一個猜情緒的網頁小遊戲。畫面上出現一句話，你把網子拖到「難過 ↔ 開心」之間你覺得的位置，按下「撒網！」，參考分數就會落下來，越接近分數越高，連續猜準還有連擊加成。有限時、生存、每日挑戰和雙人對戰，玩完拿到一張附「情緒地圖」的成績卡。不用安裝，打開就能玩：**<https://natlee.github.io/word-net-game/>**
 
-*A small mood-guessing game in Traditional Chinese: read a sentence, cast your net on the sad ↔ happy scale, and see how close you got to the reference score.*
+*A small mood-guessing game in Traditional Chinese: read a sentence, cast your net on the sad ↔ happy scale, and see how close you got to the reference score. Five modes, ranks, achievements, a shareable result card, and a two-player mode for one device.*
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/reveal.gif" alt="揭曉動畫：「我沒事，真的。」網子撒在 -0.45，網子落下、參考分數 -0.40 掉進網裡，畫面邊緣閃出綠光，「完美！」彈出，分數翻牌成 +125（100 × 1.25 連擊），下方出現說明「會特別強調『真的』，通常是有事。」" width="560">
+</p>
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/play-desktop-dark.webp">
-    <img src="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/play-desktop-light.webp" alt="桌面版遊戲畫面：經典模式第 2 句「週末去爬山，山頂的風好舒服。」，網子和參考分數都在 +0.70，顯示「完美！」+125（100 × 1.25 連擊），上方是連擊 2 和總分 225" width="820">
+    <img src="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/play-desktop-light.webp" alt="桌面版遊戲畫面：經典模式第 2 句「捷運又誤點，這禮拜第三次遲到。」，網子撒在 -0.65，參考分數 -0.60，顯示「完美！」+125（100 × 1.25 連擊），上方是連擊 2 和總分 225" width="820">
   </picture>
 </p>
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/mobile-dark.webp">
-    <img src="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/mobile-light.webp" alt="手機版的三個畫面：首頁（三種模式和累計句數）、拖動網子時（有點開心 +0.35）、揭曉後（完美！+125）" width="820">
+    <img src="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/mobile-light.webp" alt="手機版的三個畫面：首頁（段位和經驗值、題庫選擇、模式卡片）、拖動網子時、揭曉後（完美！+125）" width="820">
   </picture>
 </p>
 
 ## 怎麼玩
 
-1. 第一次來先取個名字，排行榜和送出的標註都會用這個名字。
-2. 選一種模式：
+1. 第一次來先取個名字，排行榜和成績卡會用這個名字。
+2. 在首頁選題庫（全部、日常短句、話中有話、職場、戀愛、網路用語），再選一種玩法：
    - **經典**：10 句，沒有時間限制。
    - **限時**：60 秒內答越多越好。揭曉答案時不計時，接著會自動換下一句。
-   - **每日挑戰**：每天同一組 5 句，大家拿到的題目一樣，一天只能玩一次。玩完可以複製文字成績分享給朋友。
+   - **生存**：3 顆心。「失手」扣一顆，連擊每到第 5 句補一顆（最多 3 顆），心扣完就結束，看你能撐多久。
+   - **每日挑戰**：每天同一組 5 句，固定從全部題庫挑，大家拿到的題目一樣，一天只能玩一次。
+   - **雙人對戰**：兩個人用同一台裝置輪流撒網，見下方說明。
 3. 讀完句子，把網子拖到你覺得的位置。最左邊是 -1（很難過），中間是 0（普通），最右邊是 +1（很開心）。
-4. 按「撒網！」鎖定答案。參考分數會落在刻度上，畫面告訴你差多少、拿幾分。有些句子（反諷、話中有話）揭曉後會附一句說明。
+4. 按「撒網！」鎖定答案。網子落下、參考分數掉在刻度上，畫面告訴你差多少、拿幾分。反諷、網路用語這類句子，揭曉後會附一句說明。
 
 ### 計分
 
@@ -51,9 +59,62 @@
 | △ 差一點 | ≤ 0.50 | 50–74 |
 | × 失手 | > 0.50 | 0–49（差 1.00 以上是 0） |
 
-連續拿到「很接近」以上就是連擊：第 2 句起每句多乘 0.25 倍，最多 2 倍。例如連續第 3 句很接近、差 0.20，就是 80 × 1.5 = 120 分。每累計判斷滿 100 句，會跳出恭喜畫面。
+連續拿到「很接近」以上就是連擊：第 2 句起每句多乘 0.25 倍，最多 2 倍。例如連續第 3 句很接近、差 0.20，就是 80 × 1.5 = 120 分。
 
-這些數字都寫在 [`src/config.ts`](src/config.ts)，改那個檔案就能調整規則，遊戲裡的說明和教學會跟著變。
+### 段位和成就
+
+每句拿到的分數都算經驗值（XP），累積到門檻就升一個段位。首頁和右上角的「我的檔案」看得到離下一段還差多少。
+
+| 段位 | 需要的經驗值 |
+|---|---|
+| Lv.1 見習撒網人 | 0 |
+| Lv.2 捕語學徒 | 500 |
+| Lv.3 情緒漁夫 | 1,500 |
+| Lv.4 讀心漁師 | 3,500 |
+| Lv.5 共感船長 | 7,000 |
+| Lv.6 心海領航員 | 12,000 |
+| Lv.7 心海傳說 | 20,000 |
+
+另外有 14 個成就，例如第一次「完美」、一局連擊 10、在反諷句子猜準 5 次、參考分數兩個極端都拿過完美、連續 3 天完成每日挑戰、每個題庫都玩過、打完一場雙人對戰。全部列在「我的檔案」，解鎖的會標上日期。
+
+解鎖成就、升段位、每累計判斷滿 100 句時，畫面上方會跳出小通知（升段位和滿 100 句還有彩帶）。通知不會擋住遊戲，限時模式的時間也不會因此吃虧。
+
+這些數字都寫在 [`src/config.ts`](src/config.ts) 和 [`src/game/achievements.ts`](src/game/achievements.ts)，改那裡就能調整規則，遊戲裡的說明會跟著變。
+
+### 成績卡和情緒地圖
+
+<img src="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/result-card.webp" alt="成績卡：經典模式 1201 分、Lv.2 捕語學徒、每句的結果符號，中間是情緒地圖：10 個點大多落在斜線的完美帶上，兩個三角形（差一點）偏離斜線；下方是圖例和句數 10、平均差距 0.14、最高連擊 5、完美 6" width="320" align="right">
+
+一局結束會出現一張成績卡：分數、段位、每句的結果，以及一張「情緒地圖」。
+
+地圖的橫軸是參考分數，縱軸是你的答案，每句話是一個點。點落在斜線上，就是猜得一模一樣；斜線兩旁的色帶是「完美」和「很接近」的範圍。點在斜線上方表示你猜得比較開心，在下方表示猜得比較難過。每個點用和分享文字一樣的符號（◎ ○ △ ×）畫，看不出顏色也分得出來。
+
+按「存成圖片」會下載一張 1080 × 1350 的 PNG；手機上還有「分享圖片」，可以直接傳到聊天軟體。
+
+也可以「複製成績」貼成文字。分享的文字只有每句的結果符號，不會洩漏答案：
+
+```text
+Word Net 每日挑戰 2026-11-04
+412 分（5 句）
+◎◎○△×
+最高連擊 3｜平均差距 0.18
+https://natlee.github.io/word-net-game/
+```
+
+<br clear="right">
+
+### 雙人對戰
+
+兩個人用同一台裝置，在同一句話上輪流撒網。第一個人撒好，網子就會藏起來，第二個人從中間開始撒；兩個人都撒完，兩張網子和參考分數一起揭曉。每句分數高的人贏那一句，6 句之後總分高的人贏，同分再比贏的句數。
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/duo-desktop-dark.webp">
+    <img src="https://raw.githubusercontent.com/NatLee/word-net-game/master/docs/images/duo-desktop-light.webp" alt="雙人對戰的揭曉畫面：「今天的下午茶是部門經理請的。」參考分數 +0.55，小明的網子在 +0.60（完美 +100），阿華的網子在 +0.20（差一點 +65），顯示「這句 小明 贏！」" width="720">
+  </picture>
+</p>
+
+第一個玩家是這台裝置的主人，他的答案會算進累計句數、經驗值和成就。第二個玩家的答案只算進排行榜的「標註數」。
 
 ### 鍵盤和無障礙
 
@@ -67,47 +128,33 @@
 | Esc | 關掉對話框 |
 
 - 每一句開始時，焦點會自動放在網子上；揭曉後移到「下一句」，全程不用滑鼠。
-- 網子是標準的滑桿元件（`role="slider"`），螢幕閱讀器會念出目前的位置，例如「有點開心（+0.35）」，揭曉結果也會念出來。
-- 系統開了「減少動態」時，所有動畫、計分跳動和彩帶都會關掉。
+- 網子是標準的滑桿元件（`role="slider"`），螢幕閱讀器會念出目前的位置，例如「有點開心（+0.35）」，揭曉結果和通知也會念出來。
+- 系統開了「減少動態」時，所有動畫、計分跳動、粒子和彩帶都會關掉。
 - 深色、淺色可以跟著系統，也可以在右上角切換。
 - 手機上用手指拖或點刻度都可以，拖動時頁面不會跟著捲動。
-
-### 分享成績
-
-每種模式玩完都可以「複製成績」；瀏覽器有系統分享功能時（大多數手機都有），還會多一個「分享」按鈕。分享的文字只有每句的結果符號，不會洩漏答案：
-
-```text
-Word Net 每日挑戰 2026-11-04
-412 分（5 句）
-◎◎○△×
-最高連擊 3｜平均差距 0.18
-https://natlee.github.io/word-net-game/
-```
 
 ## 遊戲流程
 
 ```mermaid
 flowchart TD
-  start([第一次來：取個名字]) --> pick{選模式}
+  start([第一次來：取個名字]) --> pick{選題庫和玩法}
   pick -->|經典：10 句| read
   pick -->|限時：60 秒| read
+  pick -->|生存：3 顆心| read
   pick -->|每日挑戰：每天同一組 5 句| read
+  pick -->|雙人對戰：輪流撒網、一起揭曉| read
   read[讀一句話] --> cast[把網子拖到你覺得的位置<br/>-1 很難過 … +1 很開心]
   cast -->|撒網！或 Enter| reveal[揭曉參考分數<br/>依差距給分<br/>連續猜準有連擊]
-  reveal --> record[(記下這句標註<br/>累計句數 +1)]
-  record -.->|每滿 100 句| party[恭喜！]
+  reveal --> record[(記下這句的答案<br/>累計句數和經驗值)]
+  record -.->|每滿 100 句、升段位、解鎖成就| party[通知和彩帶]
   reveal -->|還有下一句| read
-  reveal -->|最後一句或時間到| summary[結算：分數、每句結果<br/>分享成績]
+  reveal -->|最後一句、時間到或心扣完| summary[成績卡：分數、段位、情緒地圖<br/>存成圖片或分享文字]
   summary --> board[這台裝置的排行榜]
-  record -.-> mine[我的標註：下載 JSON／CSV<br/>或確認後送到 Google 表單]
 ```
 
 ## 你的資料存在哪裡
 
-- 名字、每一句的答案（標註）、排行榜、每日挑戰紀錄和設定，都只存在你的瀏覽器裡（localStorage）。清除這個網站的資料就會消失。排行榜也只是這台裝置上的排行。
-- 右上角的「我的標註」可以把所有答案下載成 JSON 或 CSV。CSV 檔開頭加了 UTF-8 的 BOM 標記，讓 Excel 用正確的編碼讀中文。
-- 同一個頁面還有「送出標註」：跟 2018 年的版本一樣，把名字、句子和你給的分數送到作者的 Google 表單，幫忙累積情緒標註資料。只有你按下「送出」並在確認畫面按「確定送出」才會送，平常玩遊戲不會送任何東西。Google 表單不會回傳結果，所以畫面上只能確認資料已經送出去。
-- 架自己的版本、不想送到這份表單時，把 [`src/config.ts`](src/config.ts) 的 `ANNOTATION_FORM` 改成 `null`，「送出標註」就會消失，下載功能照常。
+名字、每一句的答案、經驗值、成就、排行榜、每日挑戰紀錄和設定，都只存在你的瀏覽器裡（localStorage），遊戲不會把任何東西傳到別的地方。清除這個網站的資料就會消失，排行榜也只是這台裝置上的排行。
 
 ## 在本機跑
 
@@ -116,7 +163,7 @@ flowchart TD
 ```bash
 npm ci
 npm run dev        # 開發伺服器，網址會印在終端機上（預設 http://localhost:5173/）
-npm test           # Vitest：計分、題庫檢查、遊戲流程和主要畫面
+npm test           # Vitest：計分、題庫檢查、成就、遊戲流程和主要畫面
 npm run lint       # ESLint
 npm run build      # 型別檢查 + 正式版，輸出到 dist/
 npm run preview    # 在本機看 dist/ 的正式版
@@ -135,7 +182,7 @@ push 到 `master` 時，deploy workflow 會跑 lint、測試、build，再部署
 
 ## 新增句子
 
-句子放在 [`src/data/packs/`](src/data/packs/)，一個 JSON 檔是一個題庫。新增一個檔案，裡面的句子就會加進遊戲，不用改程式。
+句子放在 [`src/data/packs/`](src/data/packs/)，一個 JSON 檔是一個題庫。新增一個檔案，裡面的句子就會加進遊戲，首頁的「題庫」也會多一個選項，不用改程式。
 
 ```json
 {
@@ -143,6 +190,7 @@ push 到 `master` 時，deploy workflow 會跑 lint、測試、build，再部署
   "title": "我的題庫",
   "language": "zh-TW",
   "source": "原創：為 word-net-game 撰寫的句子和參考分數。",
+  "license": "CC-BY-4.0",
   "sentences": [
     { "id": "mine-001", "text": "今天的晚餐超好吃！", "score": 0.8, "tags": ["吃"] },
     { "id": "mine-002", "text": "我沒事，真的。", "score": -0.4, "tags": ["話中有話"], "note": "會特別強調「真的」，通常是有事。" }
@@ -153,11 +201,12 @@ push 到 `master` 時，deploy workflow 會跑 lint、測試、build，再部署
 | 欄位 | 規則 |
 |---|---|
 | `id`（題庫） | 小寫英文、數字和 `-`，不能跟別的題庫重複 |
-| `source` | 句子和分數從哪裡來、用什麼授權。用別人的資料集時，寫上出處和授權 |
+| `source` | 句子和分數從哪裡來。用別人的資料集時，寫上出處 |
+| `license` | 句子和分數的授權，用 SPDX 代碼（例如 `CC-BY-4.0`）。這個資料夾的 [LICENSE](src/data/packs/LICENSE) 說明內建題庫都是 CC BY 4.0；加入別的授權的題庫時，記得一起更新 |
 | `sentences[].id` | 小寫英文、數字和 `-`，**所有題庫加起來**不能重複。紀錄和每日挑戰靠它認句子，發佈後不要改 |
 | `sentences[].text` | 1–60 個字 |
 | `sentences[].score` | 參考分數，-1 到 1，兩位小數 |
-| `sentences[].tags` | 顯示在句子下方的小標籤，可以是空陣列 |
+| `sentences[].tags` | 顯示在句子下方的小標籤，可以是空陣列。「反諷雷達」成就看的是 `反諷` 這個標籤 |
 | `sentences[].note` | 選填，揭曉後顯示的說明，適合反諷或容易猜錯的句子 |
 
 改完跑 `npm test`。格式有錯時，測試會列出每個問題和位置，例如：
@@ -171,23 +220,24 @@ Error: Sentence packs are invalid:
 
 ## 題庫和授權
 
-- 兩個內建題庫（日常短句 49 句、話中有話 30 句）的句子和參考分數，都是為這個專案原創的，沒有取自任何資料集或網站。參考分數是一種看法，不是標準答案；猜得跟它不一樣，不代表你錯了。
-- 這個 repo 目前還沒有授權條款（LICENSE 檔）。
+- 五個內建題庫（日常短句 49 句、話中有話 30 句、職場 25 句、戀愛 25 句、網路用語 25 句，共 154 句）的句子和參考分數，都是為這個專案原創的，沒有取自任何資料集或網站。參考分數是一種看法，不是標準答案；猜得跟它不一樣，不代表你錯了。
+- **程式碼**用 [MIT 授權](LICENSE)（Copyright NatLee）。
+- **句子和參考分數**（[`src/data/packs/`](src/data/packs/) 裡的 JSON）用 [CC BY 4.0](src/data/packs/LICENSE)：可以複製、改寫、商用，只要註明出處，例如「“Word Net sentence packs” by NatLee（https://github.com/NatLee/word-net-game），CC BY 4.0」。每個題庫的 `license` 欄位也寫著它的授權。
 - 字型 [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) 用 SIL Open Font License 1.1；圖示 [Lucide](https://lucide.dev/) 用 ISC 授權。音效是程式即時合成的，沒有音檔。
 
 ## 2018 年的原版
 
 這個遊戲 2018 年的名字是 WordNet，是一個收集「句子情緒標註」的網頁：畫面顯示一句話，玩家用滑桿在難過和開心之間打分數，按送出後把名字、句子和分數寫進 Google 表單；排行榜則讀 Google 試算表，看誰標得最多。
 
-到 2026 年，它已經不能用了：句子來自 Heroku 上的小服務，那個 app 已經不存在；排行榜用的 Google 試算表舊 API 在 2021 年關閉。這次用 React、Tailwind 和 Vite 重做，原本的功能都留著：
+到 2026 年，它已經不能用了：句子來自 Heroku 上的小服務，那個 app 已經不存在；排行榜用的 Google 試算表舊 API 在 2021 年關閉。這次用 React、Tailwind 和 Vite 重做成可以計分的遊戲。作者也不再收集標註資料，所以送到 Google 表單的部分拿掉了，其他功能都還在：
 
 | 2018 年 | 現在 |
 |---|---|
 | 從 Heroku 抓一句話 | 句子放在 repo 裡的題庫，加上參考分數，變成可以計分的遊戲 |
 | 滑桿 -1 到 1，兩端是難過和開心的臉 | 一樣的刻度和兩張臉，滑桿換成可以拖、點、用鍵盤操作的網子 |
 | 輸入名字，存在瀏覽器裡 | 一樣，第一次來會先問名字，可以在設定裡改 |
-| 畫面上方的累計次數、每 100 次恭喜 | 一樣，次數顯示在右上角，每滿 100 句有恭喜畫面和彩帶 |
-| 「你確定嗎？」後送到 Google 表單 | 一樣送到同一份表單，改成在「我的標註」裡一次送出，送之前一樣會問「你確定嗎？」 |
+| 畫面上方的累計次數、每 100 次恭喜 | 一樣，次數顯示在右上角，每滿 100 句跳出恭喜通知和彩帶 |
+| 「你確定嗎？」後送到 Google 表單 | 拿掉了，答案只留在你的瀏覽器裡 |
 | 3 步驟 gif 教學 | 3 步驟互動教學，最後一樣是「做得好！我們可以開始了！」 |
 | 線上排行榜（每個名字標過幾句） | 這台裝置的排行榜：各模式最高分，加上「標註數」（每個名字標過幾句） |
 
@@ -204,10 +254,10 @@ Error: Sentence packs are invalid:
 
 ```text
 src/
-  config.ts          遊戲規則：計分、模式、時間、里程碑、Google 表單
-  data/packs/        題庫（JSON），validate.ts 負責檢查
-  game/              純邏輯：計分、發牌、一局的狀態、分享文字
-  lib/               瀏覽器相關：儲存、匯出、送表單、音效、深淺色
+  config.ts          遊戲規則：計分、模式、生命、段位、時間、里程碑
+  data/packs/        題庫（JSON）和它們的 CC BY 4.0 授權；validate.ts 負責檢查
+  game/              純邏輯：計分、發牌、單人一局、雙人對戰、段位、成就、成績卡的座標、分享文字
+  lib/               瀏覽器相關：儲存、排行榜、成績卡存圖、音效、深淺色
   hooks/  components/  App.tsx   畫面
 docs/images/         README 的圖；src/hero.html 是封面圖的原始檔
 docs/2018/           2018 年原版的教學 gif

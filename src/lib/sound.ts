@@ -1,6 +1,6 @@
 import type { Tier } from '../types.ts';
 
-export type Cue = Tier | 'milestone';
+export type Cue = Tier | 'unlock' | 'milestone';
 
 interface Note {
   /** Frequency in Hz. */
@@ -30,6 +30,11 @@ export const CUES: Record<Cue, Note[]> = {
   miss: [
     { freq: 247, at: 0, length: 0.14, wave: 'sawtooth' },
     { freq: 196, at: 0.12, length: 0.22, wave: 'sawtooth' },
+  ],
+  unlock: [
+    { freq: 880, at: 0, length: 0.1, wave: 'triangle' },
+    { freq: 1175, at: 0.08, length: 0.1, wave: 'triangle' },
+    { freq: 1568, at: 0.16, length: 0.24, wave: 'triangle' },
   ],
   milestone: [
     { freq: 523, at: 0, length: 0.14 },

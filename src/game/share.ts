@@ -18,6 +18,11 @@ export interface ShareInput {
  * A result as plain text for chat apps: one symbol per sentence (◎ perfect, ○ close, △ near,
  * × miss) so friends see how it went without seeing the answers.
  */
+/** A duo match as text: both names, the score line and who won. */
+export function duoShareText(names: readonly [string, string], scores: readonly [number, number], winner: 0 | 1 | null, url: string): string {
+  return [`${GAME_TITLE} 雙人對戰`, `${names[0]} ${scores[0]} : ${scores[1]} ${names[1]}`, winner === null ? '平手！' : `${names[winner]} 贏了！`, url].join('\n');
+}
+
 export function shareText(input: ShareInput): string {
   const heading = [GAME_TITLE, MODE_INFO[input.mode].title, input.date].filter(Boolean).join(' ');
   const symbols = input.tiers.map((tier) => TIER_INFO[tier].symbol);

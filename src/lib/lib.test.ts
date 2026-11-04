@@ -1,13 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ANNOTATION_FORM, LEADERBOARD_SIZE, MILESTONE_EVERY } from '../config.ts';
+import { LEADERBOARD_SIZE, MILESTONE_EVERY } from '../config.ts';
 import type { Annotation, RunRecord } from '../types.ts';
 import { applyColorMode, colorModeScript, nextMode } from './color-mode.ts';
-import { formBody, sendAnnotations } from './google-form.ts';
 import { gameUrl, normalizeBase, resolveBase } from './paths.ts';
 import {
   addRun,
-  annotationsToCSV,
-  annotationsToJSON,
   crossedMilestone,
   labelCounts,
   parseAnnotations,
@@ -24,6 +21,7 @@ const answer = (over: Partial<Annotation> = {}): Annotation => ({
   reference: 0.85,
   mode: 'classic',
   name: '小明',
+  points: 95,
   at: '2026-11-04T08:00:00.000Z',
   ...over,
 });
@@ -111,49 +109,6 @@ describe('leaderboard', () => {
       { name: '阿華', count: 2 },
       { name: '小美', count: 1 },
     ]);
-  });
-});
-
-describe('exports', () => {
-  it('writes CSV that Excel reads as UTF-8 and that survives commas, quotes and new lines', () => {
-    const csv = annotationsToCSV([answer({ text: '他說："好，\n就這樣"', sentAt: '2026-11-04T09:00:00.000Z' })]);
-    expect(csv.startsWith('\uFEFF')).toBe(true);
-    const [header, row] = csv.slice(1).split('\r\n');
-    expect(header).toBe('at,name,mode,sentenceId,text,guess,reference,distance,sentAt');
-    expect(row).toBe('2026-11-04T08:00:00.000Z,小明,classic,day-001,"他說：""好，\n就這樣""",0.80,0.85,0.05,2026-11-04T09:00:00.000Z');
-  });
-
-  it('writes JSON with a count and the time of export', () => {
-    expect(JSON.parse(annotationsToJSON([answer()], '2026-11-04T10:00:00.000Z'))).toEqual({
-      exportedAt: '2026-11-04T10:00:00.000Z',
-      count: 1,
-      annotations: [answer()],
-    });
-  });
-});
-
-describe('Google Form', () => {
-  const target = ANNOTATION_FORM!;
-
-  it('fills the same three fields the 2018 version sent', () => {
-    expect(Object.fromEntries(formBody(target, answer()))).toEqual({
-      'entry.1306234642': '小明',
-      'entry.404300076': '終於放假了',
-      'entry.43544314': '0.8',
-    });
-  });
-
-  it('posts each answer in no-cors mode and stamps the ones that went out', async () => {
-    const fetchImpl = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(new Response(null))
-      .mockRejectedValueOnce(new TypeError('offline'));
-    const now = () => new Date('2026-11-04T09:00:00.000Z');
-    const result = await sendAnnotations(target, [answer(), answer({ sentenceId: 'day-002' })], fetchImpl, now);
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(fetchImpl.mock.calls[0][0]).toBe(target.action);
-    expect(fetchImpl.mock.calls[0][1]).toMatchObject({ method: 'POST', mode: 'no-cors' });
-    expect(result).toEqual({ sent: [answer({ sentAt: '2026-11-04T09:00:00.000Z' })], failed: 1 });
   });
 });
 

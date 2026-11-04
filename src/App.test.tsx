@@ -2,13 +2,15 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App.tsx';
-import { ANNOTATION_FORM, MODES, RUSH_REVEAL_MS } from './config.ts';
+import { DUO, MODES, RUSH_REVEAL_MS } from './config.ts';
 import { storageKey, writeStored } from './lib/storage.ts';
 import { media } from './test/setup.ts';
-import type { Annotation, Sentence } from './types.ts';
+import type { Annotation, Sentence, SentencePack } from './types.ts';
 
 // Every sentence scores +0.5, so pressing 7 (= +0.5) is always perfect, whatever order they are dealt in.
 const pool: Sentence[] = Array.from({ length: 12 }, (_, i) => ({ id: `t-${i}`, text: `測試句子 ${i}`, score: 0.5, tags: [], pack: 'test' }));
+const pack = (id: string, title: string, sentences: Sentence[]): SentencePack => ({ id, title, language: 'zh-TW', source: 'test', license: 'CC0-1.0', sentences });
+const packs = [pack('test', '測試', pool)];
 const now = () => new Date(2026, 10, 4, 9, 30);
 
 const saved = (name: string) => JSON.parse(localStorage.getItem(storageKey(name)) ?? 'null');
@@ -16,7 +18,7 @@ const saved = (name: string) => JSON.parse(localStorage.getItem(storageKey(name)
 function setup({ named = true }: { named?: boolean } = {}) {
   if (named) writeStored('name', '小明');
   const user = userEvent.setup();
-  render(<App pool={pool} now={now} />);
+  render(<App packs={packs} now={now} />);
   return user;
 }
 
@@ -88,7 +90,7 @@ describe('a classic run', () => {
     expect(screen.getByLabelText('目前 1750 分')).toBeInTheDocument();
     await user.keyboard('{Enter}'); // 看結算
 
-    expect(screen.getByText('1750')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /成績卡：1750 分，10 句/ })).toBeInTheDocument();
     expect(screen.getByText('新紀錄！')).toBeInTheDocument();
     expect(screen.getByLabelText(`已經判斷 ${MODES.classic.rounds} 句`)).toBeInTheDocument();
     expect(saved('annotations')).toHaveLength(MODES.classic.rounds);
@@ -118,8 +120,31 @@ describe('a classic run', () => {
     await answer(user, '1');
     await user.click(screen.getByRole('button', { name: '離開' }));
     expect(screen.getByRole('button', { name: /開始經典/ })).toBeInTheDocument(); // back home
-    expect(screen.getAllByText('還沒有紀錄')).toHaveLength(3); // no run was recorded
+    expect(screen.getAllByText('還沒有紀錄')).toHaveLength(Object.keys(MODES).length); // no run was recorded in any mode
     expect(saved('annotations')).toHaveLength(1); // the answer itself still counts
+  });
+});
+
+describe('sentence packs', () => {
+  it('deal only from the chosen pack, remember the choice, and leave the daily challenge on every pack', async () => {
+    const sad = Array.from({ length: 3 }, (_, i) => ({ id: `sad-${i}`, text: `難過的句子 ${i}`, score: -0.5, tags: [], pack: 'sad' }));
+    writeStored('name', '小明');
+    const user = userEvent.setup();
+    render(<App packs={[pack('test', '測試', pool), pack('sad', '難過', sad)]} now={now} />);
+
+    const picker = screen.getByRole('radiogroup', { name: '題庫' });
+    expect(within(picker).getByRole('radio', { name: /全部/ })).toHaveAttribute('aria-checked', 'true');
+    expect(within(picker).getByRole('radio', { name: /^難過s*3$/ })).toBeInTheDocument();
+    await user.click(within(picker).getByRole('radio', { name: /難過/ }));
+    expect(saved('pack')).toBe('sad');
+
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    expect(screen.getByText(/^難過的句子/)).toBeInTheDocument();
+    expect(screen.getByText('第 1 / 3 句', { exact: false })).toBeInTheDocument(); // the pack only has 3
+
+    await user.click(screen.getByRole('button', { name: '離開' }));
+    await user.click(screen.getByRole('button', { name: /開始每日挑戰/ }));
+    expect(screen.getByText(`第 1 / ${MODES.daily.rounds} 句`, { exact: false })).toBeInTheDocument(); // dealt from both packs
   });
 });
 
@@ -133,7 +158,7 @@ describe('the daily challenge', () => {
       await answer(user, i === 0 ? '1' : '7');
       await user.keyboard('{Enter}');
     }
-    expect(screen.getByText('每日挑戰 2026-11-04')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '每日挑戰 2026-11-04' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '再玩一次' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '複製成績' }));
@@ -153,7 +178,7 @@ describe('the timed mode', () => {
   it('counts down only while guessing, moves on by itself and ends when time is up', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
     writeStored('name', '小明');
-    render(<App pool={pool} now={now} />);
+    render(<App packs={packs} now={now} />);
     fireEvent.click(screen.getByRole('button', { name: /開始限時/ }));
     expect(screen.getByRole('timer')).toHaveAccessibleName(`剩下 ${MODES.rush.seconds} 秒`);
 
@@ -168,68 +193,115 @@ describe('the timed mode', () => {
     expect(screen.getByRole('timer')).toHaveAccessibleName(`剩下 ${MODES.rush.seconds - 5} 秒`);
 
     act(() => vi.advanceTimersByTime(MODES.rush.seconds * 1000));
-    expect(screen.getByText('限時')).toBeInTheDocument(); // summary title
+    expect(screen.getByRole('heading', { name: '限時' })).toBeInTheDocument(); // summary title
     expect(screen.getByRole('button', { name: '再玩一次' })).toBeInTheDocument();
   });
 });
 
+describe('survival', () => {
+  it('ends when the hearts run out', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: /開始生存/ }));
+    expect(screen.getByRole('img', { name: `剩下 ${MODES.survival.lives} 顆心，共 ${MODES.survival.lives} 顆` })).toBeInTheDocument();
+    for (let i = 0; i < MODES.survival.lives; i++) {
+      await answer(user, '1'); // -1 against +0.5: a miss
+      expect(screen.getByText('失手，扣一顆心')).toBeInTheDocument();
+      if (i < MODES.survival.lives - 1) await user.keyboard('{Enter}');
+    }
+    expect(screen.getByRole('button', { name: '看結算' })).toBeInTheDocument();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('heading', { name: '生存' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '再玩一次' })).toBeInTheDocument();
+  });
+});
+
+const old = (over: Partial<Annotation> = {}): Annotation => ({ sentenceId: 'x', text: 'x', guess: 1, reference: 0, mode: 'classic', name: '小明', points: 0, at: 'then', ...over });
+
+describe('duo', () => {
+  it('lets two players take turns, hides the first net, and keeps the guest out of the owner count', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: /開始雙人對戰/ }));
+    const dialog = screen.getByRole('dialog', { name: '雙人對戰' });
+    await user.type(within(dialog).getByLabelText('對手的名字'), '阿華');
+    await user.click(within(dialog).getByRole('button', { name: '開始對戰' }));
+
+    for (let i = 0; i < DUO.rounds; i++) {
+      expect(screen.getByText(/輪到/)).toHaveTextContent('輪到 小明 撒網');
+      await answer(user, '7'); // 小明: spot on
+      expect(screen.getByText(/輪到/)).toHaveTextContent('輪到 阿華 撒網（小明 的網子先藏起來了）');
+      expect(screen.getByRole('slider')).toHaveAttribute('aria-valuenow', '0'); // the second net starts in the middle
+      await answer(user, '5'); // 阿華: 0.5 off
+      expect(screen.getByText(/這句/)).toHaveTextContent('這句 小明 贏！');
+      await user.keyboard('{Enter}');
+    }
+    expect(screen.getByRole('heading', { name: '雙人對戰' })).toBeInTheDocument();
+    expect(screen.getByText(/贏了！/)).toHaveTextContent('小明 贏了！');
+    expect(screen.getByRole('button', { name: '再來一場' })).toBeInTheDocument();
+
+    const stored: Annotation[] = saved('annotations');
+    expect(stored.filter((a) => !a.guest)).toHaveLength(DUO.rounds);
+    expect(stored.filter((a) => a.guest).map((a) => a.name)).toEqual(Array(DUO.rounds).fill('阿華'));
+    expect(screen.getByLabelText(`已經判斷 ${DUO.rounds} 句`)).toBeInTheDocument(); // only the owner's answers
+    expect(Object.keys(saved('achievements'))).toContain('duel');
+
+    await user.click(screen.getByRole('button', { name: '回首頁' }));
+    await user.click(screen.getByRole('button', { name: '排行榜' }));
+    const board = screen.getByRole('dialog', { name: '排行榜' });
+    await user.click(within(board).getByRole('tab', { name: '標註數' }));
+    expect(within(board).getByText('阿華')).toBeInTheDocument(); // the guest still shows in the per-name ranking
+  });
+});
+
 describe('milestones', () => {
-  it('congratulates on the hundredth answer, like the 2018 version', async () => {
-    const old: Annotation = { sentenceId: 'x', text: 'x', guess: 0, reference: 0, mode: 'classic', name: '小明', at: 'then' };
-    writeStored('annotations', Array.from({ length: 99 }, () => old));
+  it('congratulates on the hundredth answer, like the 2018 version, without stopping the game', async () => {
+    writeStored('annotations', Array.from({ length: 99 }, () => old()));
     const user = setup();
     expect(screen.getByText('再 1 句就到 100 句，每滿 100 句有小驚喜。')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /開始經典/ }));
     await answer(user, '7');
-    const dialog = screen.getByRole('dialog', { name: '恭喜！' });
-    expect(dialog).toHaveTextContent('你已經判斷了 100 句！');
-    expect(dialog).toHaveTextContent('離下一個一百又更近一步了呢！');
+    const toasts = screen.getByRole('status');
+    expect(toasts).toHaveTextContent('恭喜！你已經判斷了 100 句');
+    expect(toasts).toHaveTextContent('離下一個一百又更近一步了呢！');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '下一句' })).toHaveFocus(); // the game keeps going
   });
 });
 
-describe('my annotations', () => {
-  async function withTwoAnswers() {
+describe('ranks and achievements', () => {
+  it('unlocks achievements as they happen and lists them in the profile', async () => {
     const user = setup();
     await user.click(screen.getByRole('button', { name: /開始經典/ }));
     await answer(user, '7');
-    await user.keyboard('{Enter}');
-    await answer(user, '3');
+    const toasts = screen.getByRole('status');
+    expect(toasts).toHaveTextContent('解鎖成就：第一網');
+    expect(toasts).toHaveTextContent('解鎖成就：正中紅心');
+    // The test game has a single pack, so answering once from it also visits every pack.
+    expect(Object.keys(saved('achievements'))).toEqual(['first-cast', 'bullseye', 'explorer']);
+
     await user.click(screen.getByRole('button', { name: '離開' }));
-    await user.click(screen.getByRole('button', { name: '我的標註' }));
-    return { user, dialog: screen.getByRole('dialog', { name: '我的標註' }) };
-  }
-
-  it('downloads them as JSON and CSV', async () => {
-    const createObjectURL = vi.fn((blob: Blob) => (void blob, 'blob:test'));
-    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
-    const clicks = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
-    const { user, dialog } = await withTwoAnswers();
-
-    await user.click(within(dialog).getByRole('button', { name: /JSON/ }));
-    const json = JSON.parse(await createObjectURL.mock.calls[0][0].text());
-    expect(json).toMatchObject({ count: 2, annotations: [{ guess: 0.5, reference: 0.5, name: '小明', mode: 'classic' }, { guess: -0.5 }] });
-
-    await user.click(within(dialog).getByRole('button', { name: /CSV/ }));
-    const csv = await createObjectURL.mock.calls[1][0].text();
-    expect(csv.split('\r\n')[0]).toBe('at,name,mode,sentenceId,text,guess,reference,distance,sentAt');
-    expect(clicks).toHaveBeenCalledTimes(2);
+    await user.click(screen.getByRole('button', { name: '我的檔案' }));
+    const profile = screen.getByRole('dialog', { name: '小明 的檔案' });
+    expect(within(profile).getByText('第一網').closest('li')).toHaveTextContent('（已解鎖）');
+    expect(within(profile).getByText('零失誤').closest('li')).toHaveTextContent('（還沒解鎖）');
+    expect(within(profile).getByText('Lv.1')).toBeInTheDocument();
   });
 
-  it('sends the unsent ones to the Google Form only after the player confirms', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null));
-    const { user, dialog } = await withTwoAnswers();
-
-    await user.click(within(dialog).getByRole('button', { name: '送出 2 句' }));
-    expect(within(dialog).getByText(/你確定嗎？/)).toBeInTheDocument();
-    await user.click(within(dialog).getByRole('button', { name: '不要' }));
-    expect(fetchSpy).not.toHaveBeenCalled();
-
-    await user.click(within(dialog).getByRole('button', { name: '送出 2 句' }));
-    await user.click(within(dialog).getByRole('button', { name: '確定送出' }));
-    expect(await within(dialog).findByText('已送出 2 句，請繼續努力！')).toBeInTheDocument();
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
-    expect(fetchSpy.mock.calls[0]).toEqual([ANNOTATION_FORM!.action, expect.objectContaining({ method: 'POST', mode: 'no-cors' })]);
-    expect(saved('annotations').every((a: Annotation) => a.sentAt === now().toISOString())).toBe(true);
+  it('turns points into experience and announces a new rank', async () => {
+    writeStored('annotations', [old({ points: 450 })]); // 450 XP; the next rank starts at 500
+    const user = setup();
+    expect(screen.getByText('450 / 500 XP')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    await answer(user, '7'); // +100
+    expect(screen.getByRole('status')).toHaveTextContent('升級！Lv.2 捕語學徒');
+    for (let i = 1; i < MODES.classic.rounds; i++) {
+      await user.keyboard('{Enter}');
+      await answer(user, '7');
+    }
+    await user.keyboard('{Enter}');
+    const gains = screen.getByRole('list', { name: '這一局的收穫' });
+    expect(gains).toHaveTextContent('+1750 XP');
+    expect(gains).toHaveTextContent('升到 Lv.3 情緒漁夫'); // 450 + 1750 = 2200
+    expect(gains).toHaveTextContent('零失誤');
   });
 });
 

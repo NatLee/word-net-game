@@ -3,6 +3,7 @@
   "title": "日常短句",
   "language": "zh-TW",
   "source": "原創：為 word-net-game 撰寫的句子和參考分數，沒有取自任何資料集。",
+  "license": "CC-BY-4.0",
   "sentences": [
     { "id": "day-001", "text": "終於放假了，睡到自然醒的感覺真好。", "score": 0.85, "tags": ["日常"] },
     { "id": "day-002", "text": "捷運又誤點，這禮拜第三次遲到。", "score": -0.6, "tags": ["通勤"] },

@@ -1,16 +1,39 @@
-import { Download, Monitor, Moon, Send, Sun, Volume2, VolumeX } from 'lucide-react';
+import { Monitor, Moon, Sun, Volume2, VolumeX } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { ANNOTATION_FORM, LEADERBOARD_SIZE } from '../config.ts';
+import { LEADERBOARD_SIZE } from '../config.ts';
 import { MODE_INFO, MODE_ORDER } from '../game/labels.ts';
-import { downloadText } from '../lib/download.ts';
-import { sendAnnotations } from '../lib/google-form.ts';
-import { annotationsToCSV, annotationsToJSON, labelCounts, rankRuns } from '../lib/records.ts';
+import { labelCounts, rankRuns } from '../lib/records.ts';
 import type { Annotation, ColorMode, ModeId, RunRecord } from '../types.ts';
 import { Modal } from './Modal.tsx';
 import { validName } from '../lib/name.ts';
 import { NameField } from './NameField.tsx';
 import { Button } from './ui.tsx';
 
+
+/** Before a duo match: who plays against the device's own player. */
+export function DuoSetup({ owner, onStart, onClose }: { owner: string; onStart: (names: [string, string]) => void; onClose: () => void }) {
+  const [value, setValue] = useState('');
+  const rival = validName(value);
+  return (
+    <Modal title="雙人對戰" onClose={onClose}>
+      <form
+        className="flex flex-col gap-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (rival) onStart([owner, rival]);
+        }}
+      >
+        <p className="text-slate-600 dark:text-slate-300">
+          兩個人用同一台裝置，輪流在同一句話上撒網。{owner} 先撒，撒好網子就會藏起來；換對手撒完，再一起揭曉。分數高的人贏。
+        </p>
+        <NameField value={value} onChange={setValue} autoFocus label="對手的名字" />
+        <Button type="submit" variant="primary" disabled={!rival}>
+          開始對戰
+        </Button>
+      </form>
+    </Modal>
+  );
+}
 
 /** First visit: ask for a name (the 2018 version opened with the same request). */
 export function Welcome({ onDone }: { onDone: (name: string, tutorial: boolean) => void }) {
@@ -87,102 +110,6 @@ export function Leaderboard({ runs, annotations, onClose }: { runs: readonly Run
           : `每種模式保留最高分的 ${LEADERBOARD_SIZE} 次。`}
         排行榜只存在這台裝置的瀏覽器裡，清除網站資料就會消失。
       </p>
-    </Modal>
-  );
-}
-
-type SendState = { step: 'idle' } | { step: 'confirm' } | { step: 'sending' } | { step: 'done'; sent: number; failed: number };
-
-/** The player's answers: download them, or send the unsent ones to the Google Form like the 2018 version did. */
-export function Annotations({
-  annotations,
-  onSent,
-  onClose,
-  now = () => new Date(),
-}: {
-  annotations: readonly Annotation[];
-  onSent: (sent: Annotation[]) => void;
-  onClose: () => void;
-  now?: () => Date;
-}) {
-  const [state, setState] = useState<SendState>({ step: 'idle' });
-  const unsent = annotations.filter((a) => !a.sentAt);
-  const stamp = () => now().toISOString().slice(0, 10);
-
-  const send = async () => {
-    if (!ANNOTATION_FORM) return;
-    setState({ step: 'sending' });
-    const result = await sendAnnotations(ANNOTATION_FORM, unsent, fetch, now);
-    onSent(result.sent);
-    setState({ step: 'done', sent: result.sent.length, failed: result.failed });
-  };
-
-  return (
-    <Modal title="我的標註" onClose={onClose}>
-      <div className="flex flex-col gap-5">
-        <p className="text-slate-600 dark:text-slate-300">
-          你在這台裝置上判斷過 <b className="font-display text-lg text-slate-900 dark:text-white">{annotations.length}</b> 句
-          {ANNOTATION_FORM && <>，其中 {unsent.length} 句還沒送出</>}。每一句都記下了句子、你給的分數和參考分數。
-        </p>
-
-        <section className="flex flex-col gap-2">
-          <h3 className="font-semibold">下載</h3>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={annotations.length === 0}
-              onClick={() => downloadText(`word-net-${stamp()}.json`, annotationsToJSON(annotations, now().toISOString()), 'application/json')}
-              className="flex-1"
-            >
-              <Download className="size-4" aria-hidden="true" />
-              JSON
-            </Button>
-            <Button
-              disabled={annotations.length === 0}
-              onClick={() => downloadText(`word-net-${stamp()}.csv`, annotationsToCSV(annotations), 'text/csv;charset=utf-8')}
-              className="flex-1"
-            >
-              <Download className="size-4" aria-hidden="true" />
-              CSV（Excel 可開）
-            </Button>
-          </div>
-        </section>
-
-        {ANNOTATION_FORM && (
-          <section className="flex flex-col gap-3 rounded-2xl bg-slate-900/[0.03] p-4 dark:bg-white/[0.04]">
-            <h3 className="font-semibold">送出標註</h3>
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              跟 2018 年的版本一樣，可以把你的名字、句子和你給的分數送到作者的 Google 表單，幫忙累積情緒標註資料。只有按下面的按鈕才會送出。
-            </p>
-            {state.step === 'idle' && (
-              <Button variant="primary" disabled={unsent.length === 0} onClick={() => setState({ step: 'confirm' })}>
-                <Send className="size-4" aria-hidden="true" />
-                送出 {unsent.length} 句
-              </Button>
-            )}
-            {state.step === 'confirm' && (
-              <div className="flex flex-col gap-3" role="alertdialog" aria-label="確認送出">
-                <p className="font-semibold">你確定嗎？一旦按下確定，這 {unsent.length} 句就會送出，不能收回。</p>
-                <div className="flex gap-2">
-                  <Button onClick={() => setState({ step: 'idle' })} className="flex-1" data-autofocus>
-                    不要
-                  </Button>
-                  <Button variant="primary" onClick={send} className="flex-1">
-                    確定送出
-                  </Button>
-                </div>
-              </div>
-            )}
-            {state.step === 'sending' && <p role="status">送出中…</p>}
-            {state.step === 'done' && (
-              <div role="status" className="flex flex-col gap-1 text-sm">
-                <p className="font-semibold">已送出 {state.sent} 句，請繼續努力！</p>
-                {state.failed > 0 && <p className="text-miss-ink dark:text-miss">有 {state.failed} 句沒送出去（可能是網路斷了），稍後可以再送一次。</p>}
-                <p className="text-slate-500 dark:text-slate-400">Google 表單不會告訴其他網站有沒有收到，所以這裡只能確認資料送出去了。</p>
-              </div>
-            )}
-          </section>
-        )}
-      </div>
     </Modal>
   );
 }

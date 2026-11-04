@@ -36,14 +36,25 @@ export const MOOD_BANDS = [
 ] as const;
 
 /**
- * Game modes. `rounds: null` means "as many as fit in `seconds`". A mode `seededByDate` deals the
- * same sentences to everyone on the same day (the daily challenge); the others shuffle every run.
+ * Game modes. `rounds: null` means no fixed length: the run ends when `seconds` run out or the
+ * `lives` are gone. A mode `seededByDate` deals the same sentences to everyone on the same day
+ * (the daily challenge); the others shuffle every run.
  */
 export const MODES = {
-  classic: { rounds: 10, seconds: null, seededByDate: false },
-  rush: { rounds: null, seconds: 60, seededByDate: false },
-  daily: { rounds: 5, seconds: null, seededByDate: true },
+  classic: { rounds: 10, seconds: null, lives: null, seededByDate: false },
+  rush: { rounds: null, seconds: 60, lives: null, seededByDate: false },
+  survival: { rounds: null, seconds: null, lives: 3, seededByDate: false },
+  daily: { rounds: 5, seconds: null, lives: null, seededByDate: true },
 } as const;
+
+/**
+ * Modes with lives: a guess in one of the `loseOn` tiers costs a life, and every `healEvery`-th
+ * guess of a combo gives one back, up to the starting number.
+ */
+export const LIVES = { loseOn: ['miss'], healEvery: 5 } as const;
+
+/** Two players on one device take turns on the same sentences; this many per match. */
+export const DUO = { rounds: 6 } as const;
 
 /** Shared results put this many tier symbols on a line. */
 export const SHARE_SYMBOLS_PER_LINE = 10;
@@ -60,6 +71,23 @@ export const KEYBOARD = { step: 0.05, bigStep: 0.25 } as const;
 /** The 2018 version congratulated the player on every 100th sentence; so does this one. */
 export const MILESTONE_EVERY = 100;
 
+/**
+ * Ranks. Experience (XP) is every point the player has ever scored, so a rank is earned by
+ * playing well and playing often. The first rank needs 0 XP.
+ */
+export const RANKS = [
+  { minXp: 0, title: '見習撒網人' },
+  { minXp: 500, title: '捕語學徒' },
+  { minXp: 1500, title: '情緒漁夫' },
+  { minXp: 3500, title: '讀心漁師' },
+  { minXp: 7000, title: '共感船長' },
+  { minXp: 12000, title: '心海領航員' },
+  { minXp: 20000, title: '心海傳說' },
+] as const;
+
+/** How long a toast (achievement, rank up, milestone) stays on screen. */
+export const TOAST_MS = 4500;
+
 /** How many runs each mode keeps on this device's leaderboard. */
 export const LEADERBOARD_SIZE = 10;
 
@@ -71,20 +99,3 @@ export const GAME_TITLE = 'Word Net';
 
 /** Where the source code lives (footer link). */
 export const SOURCE_URL = 'https://github.com/NatLee/word-net-game';
-
-/**
- * Where "送出標註" sends a player's answers: the Google Form the 2018 version used. It still
- * accepted responses on 2026-11-04 (fields userName, text, score). Set to `null` to hide the
- * button; exporting JSON/CSV keeps working either way.
- */
-export const ANNOTATION_FORM: GoogleFormTarget | null = {
-  action: 'https://docs.google.com/forms/d/e/1FAIpQLSdFdrcjmr3yrpMdQ5C9SQ_1PMZU-LcmdZDBtmD5xXD7Vg0tVQ/formResponse',
-  fields: { name: 'entry.1306234642', text: 'entry.404300076', score: 'entry.43544314' },
-};
-
-export interface GoogleFormTarget {
-  /** The form's `formResponse` URL. */
-  action: string;
-  /** Input name (`entry.<id>`) of each question. */
-  fields: { name: string; text: string; score: string };
-}

@@ -1,4 +1,4 @@
-import { ArrowLeft, Flame, Lightbulb, Timer } from 'lucide-react';
+import { ArrowLeft, Flame, Heart, Lightbulb, Timer } from 'lucide-react';
 import { useEffect, useReducer, useRef, type Ref } from 'react';
 import { CLOCK_WARNING_SECONDS, MODES, RUSH_REVEAL_MS } from '../config.ts';
 import { MODE_INFO, TIER_INFO } from '../game/labels.ts';
@@ -16,7 +16,7 @@ interface PlayProps {
   queue: readonly Sentence[];
   reducedMotion: boolean;
   /** Called once per locked-in guess. */
-  onAnswer: (result: RoundResult, mode: ModeId) => void;
+  onAnswer: (session: Session) => void;
   onFinish: (session: Session) => void;
   /** The player left before the end. */
   onQuit: (session: Session) => void;
@@ -37,8 +37,8 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
   useEffect(() => {
     if (session.results.length <= reported.current) return;
     reported.current = session.results.length;
-    callbacks.current.onAnswer(session.results[session.results.length - 1], session.mode);
-  }, [session.results, session.mode]);
+    callbacks.current.onAnswer(session);
+  }, [session]);
   useEffect(() => {
     if (session.phase === 'finished') callbacks.current.onFinish(session);
   }, [session]);
@@ -82,16 +82,18 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
         </div>
       </div>
 
-      {total !== null ? (
+      {session.timeLeftMs !== null ? (
+        <TimeBar timeLeftMs={session.timeLeftMs} totalMs={(MODES[mode].seconds ?? 0) * 1000} />
+      ) : session.lives !== null ? (
+        <Hearts key={session.round} lives={session.lives} max={MODES[mode].lives ?? session.lives} change={result?.lifeChange ?? 0} />
+      ) : (
         <ol className="flex gap-1.5" aria-label={`第 ${session.round + 1} 句，共 ${total} 句`}>
-          {Array.from({ length: total }, (_, i) => {
+          {Array.from({ length: total ?? 0 }, (_, i) => {
             const done = session.results[i];
             const color = done ? TIER_STYLE[done.tier].bg : i === session.round ? 'bg-slate-400 dark:bg-slate-500' : 'bg-slate-900/10 dark:bg-white/10';
             return <li key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${color}`} />;
           })}
         </ol>
-      ) : (
-        <TimeBar timeLeftMs={session.timeLeftMs ?? 0} totalMs={(MODES[mode].seconds ?? 0) * 1000} />
       )}
 
       <article className="glass relative flex min-h-48 flex-col justify-center rounded-[2rem] px-6 py-8 text-center sm:min-h-56 sm:px-10">
@@ -123,6 +125,15 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
         />
       </div>
 
+      {result && (
+        <div
+          key={`flash-${session.round}`}
+          className="pointer-events-none fixed inset-0 z-30 animate-flash"
+          style={{ boxShadow: `inset 0 0 160px 28px color-mix(in oklab, ${TIER_STYLE[result.tier].glow} 55%, transparent)` }}
+          aria-hidden="true"
+        />
+      )}
+
       <div aria-live="polite" className="sr-only">
         {result && `${TIER_INFO[result.tier].label}！參考分數 ${formatScore(result.sentence.score)}，你猜 ${formatScore(result.guess)}，得到 ${result.points} 分。`}
       </div>
@@ -138,6 +149,36 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
         </div>
       )}
     </section>
+  );
+}
+
+/** The hearts of a mode with lives; `change` animates the heart that was just lost (-1) or won (+1). */
+function Hearts({ lives, max, change }: { lives: number; max: number; change: number }) {
+  const animate = (i: number) => (change < 0 && i === lives ? 'animate-heartbreak' : change > 0 && i === lives - 1 ? 'animate-pop' : '');
+  return (
+    <div className="flex items-center justify-center gap-1.5" role="img" aria-label={`剩下 ${lives} 顆心，共 ${max} 顆`}>
+      {Array.from({ length: max }, (_, i) => (
+        <Heart
+          key={i}
+          className={`size-7 transition duration-300 ${i < lives ? 'fill-miss text-miss' : 'scale-75 text-slate-300 dark:text-slate-600'} ${animate(i)}`}
+          aria-hidden="true"
+        />
+      ))}
+    </div>
+  );
+}
+
+/** A number that flips in one character at a time, like a scoreboard. */
+function Flip({ text, delayMs }: { text: string; delayMs: number }) {
+  return (
+    <span className="inline-flex [perspective:400px]">
+      <span className="sr-only">{text}</span>
+      {[...text].map((char, i) => (
+        <span key={i} aria-hidden="true" className="inline-block animate-flip" style={{ animationDelay: `${delayMs + i * 70}ms` }}>
+          {char}
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -173,13 +214,15 @@ function Result({
     <div className={`glass animate-rise rounded-3xl p-5 ring-2 sm:p-6 ${style.ring} ${result.tier === 'miss' ? 'animate-shake' : ''}`}>
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <div>
-          <p className={`font-display text-3xl font-black tracking-tight sm:text-4xl ${style.text}`}>{TIER_INFO[result.tier].label}！</p>
+          <p className={`origin-left animate-slam font-display text-3xl font-black tracking-tight sm:text-4xl ${style.text}`}>{TIER_INFO[result.tier].label}！</p>
           <p className="mt-1 text-sm text-slate-600 tabular-nums dark:text-slate-300">
             參考 {formatScore(result.sentence.score)}｜你 {formatScore(result.guess)}｜差距 {result.distance.toFixed(2)}
           </p>
         </div>
-        <p className="animate-pop text-right font-display tabular-nums">
-          <span className="text-4xl font-black">+{result.points}</span>
+        <p className="text-right font-display tabular-nums">
+          <span className="text-4xl font-black">
+            <Flip text={`+${result.points}`} delayMs={350} />
+          </span>
           {result.multiplier > 1 && (
             <span className="ml-2 text-sm font-semibold text-orange-600 dark:text-orange-300">
               {result.base} × {result.multiplier} 連擊
@@ -187,6 +230,12 @@ function Result({
           )}
         </p>
       </div>
+      {result.lifeChange !== 0 && (
+        <p className={`mt-3 flex items-center gap-2 text-sm font-semibold ${result.lifeChange < 0 ? TIER_STYLE.miss.text : TIER_STYLE.perfect.text}`}>
+          <Heart className="size-4 fill-current" aria-hidden="true" />
+          {result.lifeChange < 0 ? '失手，扣一顆心' : `連擊 ${result.streak}，補一顆心`}
+        </p>
+      )}
       {result.sentence.note && <p className="mt-3 flex gap-2 border-t border-slate-900/10 pt-3 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300">
           <Lightbulb className="mt-0.5 size-4 shrink-0 text-near" aria-hidden="true" />
           {result.sentence.note}

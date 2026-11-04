@@ -26,7 +26,7 @@ export function validatePack(raw: unknown, file: string): PackResult {
 
   if (!isRecord(raw)) return { ok: false, errors: [`${file}: must be a JSON object`] };
 
-  for (const key of ['id', 'title', 'language', 'source'] as const) {
+  for (const key of ['id', 'title', 'language', 'source', 'license'] as const) {
     if (!nonEmptyString(raw[key])) fail(` ${key}`, 'must be a non-empty string');
   }
   if (nonEmptyString(raw.id) && !ID_PATTERN.test(raw.id)) fail(' id', 'use lowercase letters, digits and dashes');
@@ -72,6 +72,7 @@ export function validatePack(raw: unknown, file: string): PackResult {
       title: raw.title as string,
       language: raw.language as string,
       source: raw.source as string,
+      license: raw.license as string,
       sentences,
     },
   };

@@ -6,7 +6,8 @@
            --default-background-color=00000000 --virtual-time-budget=5000
            --screenshot=hero-dark.png "file:///…/hero.html#dark"
   Everything shown is from the game: the sentence and its reference score are twist-010 in
-  src/data/packs/twists.json, and +125 is a perfect guess (100) with a 2-in-a-row combo (×1.25).
+  src/data/packs/twists.json, +125 is a perfect guess (100) with a 2-in-a-row combo (×1.25), and
+  the chips are the five ways to play (MODE_INFO and the duo mode).
 -->
 <html lang="zh-Hant-TW">
 <head>
@@ -50,8 +51,10 @@
   .pill { position: absolute; right: 44px; top: 48px; font-family: Consolas, 'JetBrains Mono', monospace; font-size: 14px;
           padding: 8px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); box-shadow: var(--shadow); }
   .pill span { color: var(--muted); margin-right: 8px; }
+  .modes { position: absolute; left: 122px; top: 136px; display: flex; gap: 8px; font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif; }
+  .modes span { font-size: 13px; font-weight: 700; padding: 3px 11px; border-radius: 99px; border: 1px solid var(--line); background: var(--card); color: var(--muted); }
 
-  .card { position: absolute; top: 172px; height: 180px; padding: 18px 20px; border-radius: 20px; background: var(--card);
+  .card { position: absolute; top: 184px; height: 180px; padding: 18px 20px; border-radius: 20px; background: var(--card);
           border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(12px);
           font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif; }
   .label { font-size: 12px; font-weight: 700; letter-spacing: .14em; color: var(--muted); }
@@ -101,10 +104,11 @@
   </header>
 
   <div class="pill"><span>$</span>npm run dev</div>
+  <div class="modes"><span>經典</span><span>限時</span><span>生存</span><span>每日挑戰</span><span>雙人對戰</span></div>
 
   <svg class="wires" width="960" height="400">
-    <path class="wire" d="M298 262 H334"/><path class="head" d="M340 262 l-9 -5 v10 z"/>
-    <path class="wire" d="M638 262 H674"/><path class="head" d="M680 262 l-9 -5 v10 z"/>
+    <path class="wire" d="M298 274 H334"/><path class="head" d="M340 274 l-9 -5 v10 z"/>
+    <path class="wire" d="M638 274 H674"/><path class="head" d="M680 274 l-9 -5 v10 z"/>
   </svg>
 
   <div class="card" id="sentence">

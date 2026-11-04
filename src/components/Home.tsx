@@ -1,35 +1,44 @@
-import { CalendarDays, ChevronRight, Sparkles, Timer, Trophy } from 'lucide-react';
+import { CalendarDays, ChevronRight, Heart, Sparkles, Timer, Trophy, Users } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
-import { MILESTONE_EVERY, MODES } from '../config.ts';
+import { DUO, MILESTONE_EVERY, MODES } from '../config.ts';
 import { MODE_INFO, MODE_ORDER } from '../game/labels.ts';
 import { rankRuns } from '../lib/records.ts';
-import type { DailyRecord, ModeId, RunRecord } from '../types.ts';
+import type { DailyRecord, ModeId, RunRecord, SentencePack } from '../types.ts';
+import { PackPicker } from './PackPicker.tsx';
+import { RankBar } from './Profile.tsx';
 import { ShareButtons } from './Share.tsx';
 
 const MODE_ICON: Record<ModeId, ComponentType<SVGProps<SVGSVGElement>>> = {
   classic: Sparkles,
   rush: Timer,
+  survival: Heart,
   daily: CalendarDays,
 };
 
 interface HomeProps {
   name: string;
   total: number;
+  xp: number;
   runs: readonly RunRecord[];
   /** Today's daily result, if the player already played it. */
   dailyDone?: DailyRecord;
   dailyShareText?: string;
+  packs: readonly SentencePack[];
+  /** The chosen pack, or null for all. */
+  packId: string | null;
+  onPack: (packId: string | null) => void;
   onStart: (mode: ModeId) => void;
+  onDuo: () => void;
 }
 
-export function Home({ name, total, runs, dailyDone, dailyShareText, onStart }: HomeProps) {
+export function Home({ name, total, xp, runs, dailyDone, dailyShareText, packs, packId, onPack, onStart, onDuo }: HomeProps) {
   const intoMilestone = total % MILESTONE_EVERY;
   const nextMilestone = total - intoMilestone + MILESTONE_EVERY;
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-8 sm:gap-10">
       <div className="animate-rise pt-2 text-center sm:pt-6">
-        <p className="mb-3 text-sm font-semibold tracking-[0.25em] text-slate-500 dark:text-slate-400">讀一句話 · 撒一張網</p>
+        <p className="mb-3 text-sm font-semibold tracking-[0.25em] text-slate-600 dark:text-slate-400">讀一句話 · 撒一張網</p>
         <h1 className="font-display text-4xl leading-tight font-black tracking-tight text-balance sm:text-6xl">
           這句話，<span className="text-mood">有多開心？</span>
         </h1>
@@ -47,22 +56,15 @@ export function Home({ name, total, runs, dailyDone, dailyShareText, onStart }: 
             已經判斷 <span className="font-display text-xl font-bold tabular-nums text-slate-900 dark:text-white">{total}</span> 句
           </p>
         </div>
-        <div
-          className="h-2 overflow-hidden rounded-full bg-slate-900/10 dark:bg-white/10"
-          role="progressbar"
-          aria-label={`距離 ${nextMilestone} 句`}
-          aria-valuemin={0}
-          aria-valuemax={MILESTONE_EVERY}
-          aria-valuenow={intoMilestone}
-        >
-          <div className="bg-mood h-full rounded-full transition-[width] duration-700" style={{ width: `${(intoMilestone / MILESTONE_EVERY) * 100}%` }} />
-        </div>
+        <RankBar xp={xp} />
         <p className="text-xs text-slate-500 dark:text-slate-400">
           再 {nextMilestone - total} 句就到 {nextMilestone} 句，每滿 {MILESTONE_EVERY} 句有小驚喜。
         </p>
       </div>
 
-      <ul className="grid gap-4 sm:grid-cols-3">
+      <PackPicker packs={packs} value={packId} onChange={onPack} />
+
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {MODE_ORDER.map((mode, i) => {
           const Icon = MODE_ICON[mode];
           const best = rankRuns(runs, mode)[0];
@@ -101,6 +103,26 @@ export function Home({ name, total, runs, dailyDone, dailyShareText, onStart }: 
           );
         })}
       </ul>
+
+      <div className="glass flex animate-rise flex-col items-start gap-4 rounded-3xl p-5 [animation-delay:420ms] sm:flex-row sm:items-center">
+        <span className="bg-mood grid size-11 shrink-0 place-items-center rounded-2xl text-white shadow-md shadow-fuchsia-500/25">
+          <Users className="size-5" aria-hidden="true" />
+        </span>
+        <div className="flex-1">
+          <h2 className="font-display text-xl font-bold">雙人對戰</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            兩個人用同一台裝置輪流撒網，先撒的人網子會藏起來，{DUO.rounds} 句後分數高的人贏。
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onDuo}
+          className="group bg-mood flex min-h-12 w-full items-center justify-center gap-1 rounded-2xl px-5 font-semibold text-white shadow-lg shadow-fuchsia-500/25 transition hover:brightness-110 sm:w-auto"
+        >
+          開始雙人對戰
+          <ChevronRight className="size-5 transition group-hover:translate-x-0.5" aria-hidden="true" />
+        </button>
+      </div>
     </section>
   );
 }

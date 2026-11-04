@@ -1,7 +1,7 @@
 import { forwardRef, useRef, type KeyboardEvent, type PointerEvent } from 'react';
 import { KEYBOARD, MOOD_BANDS, SCALE } from '../config.ts';
 import { digitValue, percentOf, valueAt } from '../game/scale.ts';
-import { formatScore, moodLabel } from '../game/scoring.ts';
+import { formatScore, keepsCombo, moodLabel } from '../game/scoring.ts';
 import type { Tier } from '../types.ts';
 import { TIER_STYLE } from './tiers.ts';
 import { Face } from './ui.tsx';
@@ -14,14 +14,23 @@ interface SpectrumProps {
   onCommit: () => void;
   /** After the lock: the reference score and how close the guess was. */
   reveal?: { reference: number; tier: Tier } | null;
+  /** Several labelled nets to show on the reveal instead of the single one (the duo mode). */
+  nets?: readonly { value: number; label: string }[];
 }
+
+/** Where the burst particles fly, as offsets in px: an even ring, so it looks the same every time. */
+const BURST = Array.from({ length: 12 }, (_, i) => {
+  const angle = (i / 12) * Math.PI * 2;
+  const reach = i % 2 ? 34 : 52;
+  return { dx: `${Math.round(Math.cos(angle) * reach)}px`, dy: `${Math.round(Math.sin(angle) * reach)}px` };
+});
 
 /**
  * The mood scale with the player's net on it. Drag or tap to move the net (mouse, touch, pen),
  * or use the keyboard: arrows step 0.05, Shift+arrows and PageUp/PageDown step 0.25, Home/End
  * jump to the ends, 1–9 jump to fixed points, Enter or Space locks the guess.
  */
-export const Spectrum = forwardRef<HTMLDivElement, SpectrumProps>(function Spectrum({ value, onChange, onNudge, onCommit, reveal }, ref) {
+export const Spectrum = forwardRef<HTMLDivElement, SpectrumProps>(function Spectrum({ value, onChange, onNudge, onCommit, reveal, nets }, ref) {
   const track = useRef<HTMLDivElement>(null);
   const locked = Boolean(reveal);
 
@@ -112,7 +121,7 @@ export const Spectrum = forwardRef<HTMLDivElement, SpectrumProps>(function Spect
             />
           ))}
 
-          {reveal && tier && (
+          {reveal && tier && !nets && (
             <span
               className={`absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full ${tier.bg} animate-pop`}
               style={{ left: `${Math.min(guessAt, refAt)}%`, width: `${Math.abs(guessAt - refAt)}%` }}
@@ -120,21 +129,29 @@ export const Spectrum = forwardRef<HTMLDivElement, SpectrumProps>(function Spect
             />
           )}
 
-          {/* The net. */}
-          <span
-            className={`absolute top-1/2 grid size-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/25 ring-4 ring-white shadow-xl shadow-slate-900/30 backdrop-blur-sm transition-[left] duration-75 dark:ring-white/90 ${locked ? '' : 'hover:scale-105'}`}
-            style={{ left: `${guessAt}%` }}
-            aria-hidden="true"
-          >
-            <svg viewBox="0 0 40 40" className="size-full text-white" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.9">
-              <clipPath id="net-clip">
-                <circle cx="20" cy="20" r="17" />
-              </clipPath>
-              <g clipPath="url(#net-clip)">
-                <path d="M0 8 32 40M0 20 20 40M8 0 40 32M20 0 40 20M0 0 40 40M40 8 8 40M40 20 20 40M32 0 0 32M20 0 0 20M40 0 0 40" />
-              </g>
-            </svg>
-          </span>
+          {/* The net, or one labelled net per player on a duo reveal. */}
+          {(nets ?? [{ value, label: '' }]).map((net, i) => (
+            <span
+              key={i}
+              className={`absolute top-1/2 grid size-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/25 ring-4 ring-white shadow-xl shadow-slate-900/30 backdrop-blur-sm transition-[left] duration-75 dark:ring-white/90 ${locked ? 'animate-cast' : 'hover:scale-105'}`}
+              style={{ left: `${percentOf(net.value)}%` }}
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 40 40" className="size-full text-white" fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.9">
+                <clipPath id={`net-clip-${i}`}>
+                  <circle cx="20" cy="20" r="17" />
+                </clipPath>
+                <g clipPath={`url(#net-clip-${i})`}>
+                  <path d="M0 8 32 40M0 20 20 40M8 0 40 32M20 0 40 20M0 0 40 40M40 8 8 40M40 20 20 40M32 0 0 32M20 0 0 20M40 0 0 40" />
+                </g>
+              </svg>
+              {net.label && (
+                <span className="absolute -top-7 left-1/2 -translate-x-1/2 rounded-full bg-slate-900 px-2 py-0.5 text-xs font-bold whitespace-nowrap text-white shadow dark:bg-white dark:text-slate-900">
+                  {net.label}
+                </span>
+              )}
+            </span>
+          ))}
 
           {reveal && tier && (
             <>
@@ -144,6 +161,17 @@ export const Spectrum = forwardRef<HTMLDivElement, SpectrumProps>(function Spect
                   style={{ left: `${refAt}%` }}
                   aria-hidden="true"
                 />
+              )}
+              {keepsCombo(reveal.tier) && (
+                <span className="absolute top-1/2 z-20" style={{ left: `${refAt}%` }} aria-hidden="true">
+                  {BURST.map((p, i) => (
+                    <span
+                      key={i}
+                      className={`absolute size-2 animate-burst rounded-full ${tier.bg}`}
+                      style={{ ['--dx' as string]: p.dx, ['--dy' as string]: p.dy }}
+                    />
+                  ))}
+                </span>
               )}
               <span
                 className={`absolute top-1/2 z-10 size-6 animate-drop rounded-full ring-4 ring-white ${tier.bg} shadow-lg dark:ring-slate-950`}

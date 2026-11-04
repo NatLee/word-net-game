@@ -3,6 +3,7 @@
   "title": "話中有話",
   "language": "zh-TW",
   "source": "原創：為 word-net-game 撰寫的句子和參考分數，沒有取自任何資料集。",
+  "license": "CC-BY-4.0",
   "sentences": [
     { "id": "twist-001", "text": "哇，又要加班，真是太棒了呢。", "score": -0.6, "tags": ["反諷"], "note": "反諷：字面上說「太棒」，其實在抱怨。" },
     { "id": "twist-002", "text": "還好啦，也就被老闆罵了一整個下午而已。", "score": -0.55, "tags": ["反諷"], "note": "用輕描淡寫掩飾難過。" },

@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { MODES } from '../config.ts';
+import { LIVES, MODES } from '../config.ts';
 import type { Sentence } from '../types.ts';
 import { seededRandom } from './random.ts';
-import { createSession, currentSentence, dealSentences, reduce, summarize, totalRounds, type Action, type Session } from './session.ts';
+import { createSession, currentSentence, dealSentences, isLastRound, reduce, summarize, totalRounds, type Action, type Session } from './session.ts';
 
 const pool: Sentence[] = Array.from({ length: 30 }, (_, i) => ({
   id: `s-${i}`,
@@ -96,6 +96,45 @@ describe('a timed run', () => {
     s = run(s, { type: 'next' }, { type: 'tick', ms: 999_999 });
     expect(s).toMatchObject({ phase: 'finished', timeLeftMs: 0 });
     expect(s.results).toHaveLength(1); // the unanswered sentence does not count
+  });
+});
+
+describe('a survival run', () => {
+  const queue = pool.filter((s) => s.score === 0); // every sentence scores 0
+  const miss: Action[] = [{ type: 'move', value: 1 }, { type: 'lock' }];
+  const perfect: Action[] = [{ type: 'move', value: 0 }, { type: 'lock' }];
+
+  it('starts with the configured lives and has no fixed length', () => {
+    const s = createSession('survival', queue);
+    expect(s.lives).toBe(MODES.survival.lives);
+    expect(totalRounds(s)).toBeNull();
+  });
+
+  it('loses a life on a miss, shows the fatal reveal, then ends', () => {
+    let s = createSession('survival', queue);
+    for (let i = 1; i < MODES.survival.lives; i++) s = run(s, ...miss, { type: 'next' });
+    expect(s.lives).toBe(1);
+    s = run(s, ...miss);
+    expect(s).toMatchObject({ phase: 'revealed', lives: 0 });
+    expect(s.results.at(-1)?.lifeChange).toBe(-1);
+    expect(isLastRound(s)).toBe(true);
+    expect(reduce(s, { type: 'next' }).phase).toBe('finished');
+  });
+
+  it('gives a life back on every healEvery-th combo guess, never above the start', () => {
+    let s = run(createSession('survival', queue), ...miss, { type: 'next' });
+    for (let i = 0; i < LIVES.healEvery; i++) s = run(s, ...perfect, { type: 'next' });
+    expect(s.lives).toBe(MODES.survival.lives);
+    expect(s.results.at(-1)).toMatchObject({ streak: LIVES.healEvery, lifeChange: 1 });
+    for (let i = 0; i < LIVES.healEvery; i++) s = run(s, ...perfect, { type: 'next' });
+    expect(s.lives).toBe(MODES.survival.lives); // already full: no change
+    expect(s.results.at(-1)?.lifeChange).toBe(0);
+  });
+
+  it('keeps lives out of the other modes', () => {
+    const s = run(createSession('classic', queue), ...miss);
+    expect(s.lives).toBeNull();
+    expect(s.results[0].lifeChange).toBe(0);
   });
 });
 
