@@ -29,6 +29,16 @@ export interface Achievement {
 }
 
 const tierOf = (a: Annotation) => tierFor(distance(a.guess, a.reference));
+
+/**
+ * Sentence kinds worth an achievement of their own: read this many sentences tagged `tag` well
+ * (close or better). The tags are the ones the packs use, so a new kind is one more line here.
+ */
+const TAG_GOALS = [
+  { id: 'sarcasm-radar', title: '反諷雷達', tag: '反諷', times: 10 },
+  { id: 'laugh-it-off', title: '苦中作樂', tag: '自嘲', times: 10 },
+  { id: 'punchline-detector', title: '笑點偵測器', tag: '幽默', times: 10 },
+] as const;
 const isPerfect = (a: Annotation) => tierOf(a) === 'perfect';
 
 /** The longest run of consecutive days in a set of YYYY-MM-DD keys. */
@@ -53,7 +63,6 @@ export function longestDayStreak(days: readonly string[]): number {
 function defineAchievements(): Achievement[] {
   const hot = 5;
   const unstoppable = 10;
-  const sarcasm = { tag: '反諷', times: 5 };
   const extreme = 0.9;
   const lightning = 20;
   const survivor = 25;
@@ -79,12 +88,14 @@ function defineAchievements(): Achievement[] {
       description: `累計判斷 ${MILESTONE_EVERY} 句。`,
       check: (c) => c.answers.length >= MILESTONE_EVERY,
     },
-    {
-      id: 'sarcasm-radar',
-      title: '反諷雷達',
-      description: `在標著「${sarcasm.tag}」的句子拿到 ${sarcasm.times} 次「很接近」以上。`,
-      check: (c) => c.answers.filter((a) => c.sentences.get(a.sentenceId)?.tags.includes(sarcasm.tag) && keepsCombo(tierOf(a))).length >= sarcasm.times,
-    },
+    ...TAG_GOALS.map(
+      (goal): Achievement => ({
+        id: goal.id,
+        title: goal.title,
+        description: `在標著「${goal.tag}」的句子拿到 ${goal.times} 次「很接近」以上。`,
+        check: (c) => c.answers.filter((a) => c.sentences.get(a.sentenceId)?.tags.includes(goal.tag) && keepsCombo(tierOf(a))).length >= goal.times,
+      }),
+    ),
     {
       id: 'extremes',
       title: '兩極',

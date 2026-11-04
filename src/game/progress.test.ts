@@ -42,7 +42,9 @@ describe('ranks', () => {
 
 describe('achievements', () => {
   const sentence = (id: string, pack: string, tags: string[] = []): Sentence => ({ id, text: id, score: 0, tags, pack });
-  const sentences = new Map([sentence('s-0', 'a'), sentence('irony', 'b', ['反諷'])].map((s) => [s.id, s]));
+  const sentences = new Map(
+    [sentence('s-0', 'a'), sentence('irony', 'b', ['反諷']), sentence('self', 'b', ['自嘲']), sentence('joke', 'b', ['幽默'])].map((s) => [s.id, s]),
+  );
   const ctx = (over: Partial<AchievementContext> = {}): AchievementContext => ({
     answers: [],
     sentences,
@@ -77,10 +79,16 @@ describe('achievements', () => {
     expect(has('unstoppable', ctx({ session: play('classic', Array(10).fill(0)) }))).toBe(true);
   });
 
-  it('sarcasm radar needs five close guesses on 反諷 sentences', () => {
-    const close = answer({ sentenceId: 'irony', reference: -0.5, guess: -0.3 });
-    expect(has('sarcasm-radar', ctx({ answers: Array(4).fill(close) }))).toBe(false);
-    expect(has('sarcasm-radar', ctx({ answers: Array(5).fill(close) }))).toBe(true);
+  it.each([
+    ['sarcasm-radar', 'irony'],
+    ['laugh-it-off', 'self'],
+    ['punchline-detector', 'joke'],
+  ])('%s needs ten close guesses on sentences with its tag', (id, sentenceId) => {
+    const close = answer({ sentenceId, reference: -0.5, guess: -0.3 });
+    const off = answer({ sentenceId, reference: -0.5, guess: 0.5 });
+    expect(has(id, ctx({ answers: [...Array(9).fill(close), off] }))).toBe(false);
+    expect(has(id, ctx({ answers: Array(10).fill(close) }))).toBe(true);
+    expect(has(id, ctx({ answers: Array(10).fill({ ...close, sentenceId: 's-0' }) }))).toBe(false); // other tags don't count
   });
 
   it('extremes needs a perfect at both ends; middle a perfect on 0', () => {
