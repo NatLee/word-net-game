@@ -36,14 +36,22 @@ export const MOOD_BANDS = [
 ] as const;
 
 /**
- * Game modes. `rounds: null` means "as many as fit in `seconds`". A mode `seededByDate` deals the
- * same sentences to everyone on the same day (the daily challenge); the others shuffle every run.
+ * Game modes. `rounds: null` means no fixed length: the run ends when `seconds` run out or the
+ * `lives` are gone. A mode `seededByDate` deals the same sentences to everyone on the same day
+ * (the daily challenge); the others shuffle every run.
  */
 export const MODES = {
-  classic: { rounds: 10, seconds: null, seededByDate: false },
-  rush: { rounds: null, seconds: 60, seededByDate: false },
-  daily: { rounds: 5, seconds: null, seededByDate: true },
+  classic: { rounds: 10, seconds: null, lives: null, seededByDate: false },
+  rush: { rounds: null, seconds: 60, lives: null, seededByDate: false },
+  survival: { rounds: null, seconds: null, lives: 3, seededByDate: false },
+  daily: { rounds: 5, seconds: null, lives: null, seededByDate: true },
 } as const;
+
+/**
+ * Modes with lives: a guess in one of the `loseOn` tiers costs a life, and every `healEvery`-th
+ * guess of a combo gives one back, up to the starting number.
+ */
+export const LIVES = { loseOn: ['miss'], healEvery: 5 } as const;
 
 /** Shared results put this many tier symbols on a line. */
 export const SHARE_SYMBOLS_PER_LINE = 10;

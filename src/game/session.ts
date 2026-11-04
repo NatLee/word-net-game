@@ -1,11 +1,13 @@
-import { MODES } from '../config.ts';
-import type { ModeId, Sentence } from '../types.ts';
+import { LIVES, MODES } from '../config.ts';
+import type { ModeId, Sentence, Tier } from '../types.ts';
 import { hashString, seededRandom, shuffle } from './random.ts';
 import { round, scoreGuess, snap, type Score } from './scoring.ts';
 
 export interface RoundResult extends Score {
   sentence: Sentence;
   guess: number;
+  /** Lives won (+1) or lost (-1) by this guess; 0 in modes without lives. */
+  lifeChange: number;
 }
 
 export type Phase = 'guessing' | 'revealed' | 'finished';
@@ -26,6 +28,8 @@ export interface Session {
   bestStreak: number;
   /** Time left in timed modes; null when the mode has no clock. */
   timeLeftMs: number | null;
+  /** Lives left in modes with lives; null otherwise. */
+  lives: number | null;
 }
 
 export type Action =
@@ -52,7 +56,7 @@ export function dealSentences(
 
 export function createSession(mode: ModeId, queue: readonly Sentence[]): Session {
   if (queue.length === 0) throw new Error('A session needs at least one sentence');
-  const { seconds } = MODES[mode];
+  const { seconds, lives } = MODES[mode];
   return {
     mode,
     queue,
@@ -64,6 +68,7 @@ export function createSession(mode: ModeId, queue: readonly Sentence[]): Session
     streak: 0,
     bestStreak: 0,
     timeLeftMs: seconds === null ? null : seconds * 1000,
+    lives,
   };
 }
 
@@ -77,9 +82,16 @@ export function totalRounds(session: Session): number | null {
   return rounds === null ? null : Math.min(rounds, session.queue.length);
 }
 
+/** True when the current round is the run's last: the final sentence, or the last life just went. */
 export function isLastRound(session: Session): boolean {
   const total = totalRounds(session);
-  return total !== null && session.round + 1 >= total;
+  return (total !== null && session.round + 1 >= total) || session.lives === 0;
+}
+
+/** How a guess changes the lives: -1 for a losing tier, +1 on every healEvery-th combo guess (up to the start). */
+export function lifeChangeFor(tier: Tier, streak: number, lives: number, maxLives: number): number {
+  if ((LIVES.loseOn as readonly Tier[]).includes(tier)) return -1;
+  return streak > 0 && streak % LIVES.healEvery === 0 && lives < maxLives ? 1 : 0;
 }
 
 export function lastResult(session: Session): RoundResult | undefined {
@@ -95,10 +107,14 @@ export function reduce(session: Session, action: Action): Session {
     case 'lock': {
       if (session.phase !== 'guessing') return session;
       const sentence = currentSentence(session);
-      const result: RoundResult = { ...scoreGuess(session.guess, sentence.score, session.streak), sentence, guess: session.guess };
+      const score = scoreGuess(session.guess, sentence.score, session.streak);
+      const maxLives = MODES[session.mode].lives;
+      const lifeChange = session.lives === null || maxLives === null ? 0 : lifeChangeFor(score.tier, score.streak, session.lives, maxLives);
+      const result: RoundResult = { ...score, sentence, guess: session.guess, lifeChange };
       return {
         ...session,
         phase: 'revealed',
+        lives: session.lives === null ? null : session.lives + lifeChange,
         results: [...session.results, result],
         score: session.score + result.points,
         streak: result.streak,

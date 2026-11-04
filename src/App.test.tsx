@@ -120,7 +120,7 @@ describe('a classic run', () => {
     await answer(user, '1');
     await user.click(screen.getByRole('button', { name: '離開' }));
     expect(screen.getByRole('button', { name: /開始經典/ })).toBeInTheDocument(); // back home
-    expect(screen.getAllByText('還沒有紀錄')).toHaveLength(3); // no run was recorded
+    expect(screen.getAllByText('還沒有紀錄')).toHaveLength(Object.keys(MODES).length); // no run was recorded in any mode
     expect(saved('annotations')).toHaveLength(1); // the answer itself still counts
   });
 });
@@ -194,6 +194,23 @@ describe('the timed mode', () => {
 
     act(() => vi.advanceTimersByTime(MODES.rush.seconds * 1000));
     expect(screen.getByText('限時')).toBeInTheDocument(); // summary title
+    expect(screen.getByRole('button', { name: '再玩一次' })).toBeInTheDocument();
+  });
+});
+
+describe('survival', () => {
+  it('ends when the hearts run out', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: /開始生存/ }));
+    expect(screen.getByRole('img', { name: `剩下 ${MODES.survival.lives} 顆心，共 ${MODES.survival.lives} 顆` })).toBeInTheDocument();
+    for (let i = 0; i < MODES.survival.lives; i++) {
+      await answer(user, '1'); // -1 against +0.5: a miss
+      expect(screen.getByText('失手，扣一顆心')).toBeInTheDocument();
+      if (i < MODES.survival.lives - 1) await user.keyboard('{Enter}');
+    }
+    expect(screen.getByRole('button', { name: '看結算' })).toBeInTheDocument();
+    await user.keyboard('{Enter}');
+    expect(screen.getByText('生存')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '再玩一次' })).toBeInTheDocument();
   });
 });

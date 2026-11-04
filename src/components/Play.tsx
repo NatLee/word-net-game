@@ -1,4 +1,4 @@
-import { ArrowLeft, Flame, Lightbulb, Timer } from 'lucide-react';
+import { ArrowLeft, Flame, Heart, Lightbulb, Timer } from 'lucide-react';
 import { useEffect, useReducer, useRef, type Ref } from 'react';
 import { CLOCK_WARNING_SECONDS, MODES, RUSH_REVEAL_MS } from '../config.ts';
 import { MODE_INFO, TIER_INFO } from '../game/labels.ts';
@@ -82,16 +82,18 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
         </div>
       </div>
 
-      {total !== null ? (
+      {session.timeLeftMs !== null ? (
+        <TimeBar timeLeftMs={session.timeLeftMs} totalMs={(MODES[mode].seconds ?? 0) * 1000} />
+      ) : session.lives !== null ? (
+        <Hearts lives={session.lives} max={MODES[mode].lives ?? session.lives} />
+      ) : (
         <ol className="flex gap-1.5" aria-label={`第 ${session.round + 1} 句，共 ${total} 句`}>
-          {Array.from({ length: total }, (_, i) => {
+          {Array.from({ length: total ?? 0 }, (_, i) => {
             const done = session.results[i];
             const color = done ? TIER_STYLE[done.tier].bg : i === session.round ? 'bg-slate-400 dark:bg-slate-500' : 'bg-slate-900/10 dark:bg-white/10';
             return <li key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${color}`} />;
           })}
         </ol>
-      ) : (
-        <TimeBar timeLeftMs={session.timeLeftMs ?? 0} totalMs={(MODES[mode].seconds ?? 0) * 1000} />
       )}
 
       <article className="glass relative flex min-h-48 flex-col justify-center rounded-[2rem] px-6 py-8 text-center sm:min-h-56 sm:px-10">
@@ -141,6 +143,20 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
   );
 }
 
+function Hearts({ lives, max }: { lives: number; max: number }) {
+  return (
+    <div className="flex items-center justify-center gap-1.5" role="img" aria-label={`剩下 ${lives} 顆心，共 ${max} 顆`}>
+      {Array.from({ length: max }, (_, i) => (
+        <Heart
+          key={i}
+          className={`size-7 transition duration-300 ${i < lives ? 'fill-miss text-miss' : 'scale-75 text-slate-300 dark:text-slate-600'}`}
+          aria-hidden="true"
+        />
+      ))}
+    </div>
+  );
+}
+
 function TimeBar({ timeLeftMs, totalMs }: { timeLeftMs: number; totalMs: number }) {
   const seconds = Math.ceil(timeLeftMs / 1000);
   const warn = seconds <= CLOCK_WARNING_SECONDS;
@@ -187,6 +203,12 @@ function Result({
           )}
         </p>
       </div>
+      {result.lifeChange !== 0 && (
+        <p className={`mt-3 flex items-center gap-2 text-sm font-semibold ${result.lifeChange < 0 ? TIER_STYLE.miss.text : TIER_STYLE.perfect.text}`}>
+          <Heart className="size-4 fill-current" aria-hidden="true" />
+          {result.lifeChange < 0 ? '失手，扣一顆心' : `連擊 ${result.streak}，補一顆心`}
+        </p>
+      )}
       {result.sentence.note && <p className="mt-3 flex gap-2 border-t border-slate-900/10 pt-3 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300">
           <Lightbulb className="mt-0.5 size-4 shrink-0 text-near" aria-hidden="true" />
           {result.sentence.note}

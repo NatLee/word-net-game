@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, Sparkles, Timer, Trophy } from 'lucide-react';
+import { CalendarDays, ChevronRight, Heart, Sparkles, Timer, Trophy } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
 import { MILESTONE_EVERY, MODES } from '../config.ts';
 import { MODE_INFO, MODE_ORDER } from '../game/labels.ts';
@@ -10,6 +10,7 @@ import { ShareButtons } from './Share.tsx';
 const MODE_ICON: Record<ModeId, ComponentType<SVGProps<SVGSVGElement>>> = {
   classic: Sparkles,
   rush: Timer,
+  survival: Heart,
   daily: CalendarDays,
 };
 
@@ -69,7 +70,7 @@ export function Home({ name, total, runs, dailyDone, dailyShareText, packs, pack
 
       <PackPicker packs={packs} value={packId} onChange={onPack} />
 
-      <ul className="grid gap-4 sm:grid-cols-3">
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {MODE_ORDER.map((mode, i) => {
           const Icon = MODE_ICON[mode];
           const best = rankRuns(runs, mode)[0];
