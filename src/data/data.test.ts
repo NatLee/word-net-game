@@ -36,6 +36,16 @@ describe('the bundled packs', () => {
     expect(share((x) => Math.abs(x) <= SCORING.tiers.close)).toBeGreaterThan(0.1);
   });
 
+  it('lean both ways inside every pack, not just overall', () => {
+    // Each pack needs at least 15% of its sentences clearly sad and 15% clearly happy (past ±0.25),
+    // so picking a single pack is still a real game.
+    for (const pack of packs) {
+      const share = (test: (score: number) => boolean) => pack.sentences.filter((s) => test(s.score)).length / pack.sentences.length;
+      expect(share((x) => x <= -SCORING.tiers.close), `${pack.id} sad side`).toBeGreaterThanOrEqual(0.15);
+      expect(share((x) => x >= SCORING.tiers.close), `${pack.id} happy side`).toBeGreaterThanOrEqual(0.15);
+    }
+  });
+
   it('use ids that are unique across packs', () => {
     expect(new Set(sentences.map((s) => s.id)).size).toBe(sentences.length);
   });
@@ -94,5 +104,10 @@ describe('loadLibrary', () => {
     expect(load).toThrow(/sentence id "demo-1" appears in more than one pack/);
     expect(() => loadLibrary({ 'a.json': good, 'b.json': good })).toThrow(/pack id "demo" is used by more than one file/);
     expect(() => loadLibrary({})).toThrow(/no sentence packs found/);
+  });
+
+  it('rejects the same sentence twice, even with different punctuation', () => {
+    const twin = { ...good, id: 'twin', sentences: [{ id: 'twin-1', text: '好 開心！', score: 0.5, tags: [] }] };
+    expect(() => loadLibrary({ 'a.json': good, 'b.json': twin })).toThrow(/sentence "twin-1" has the same text as "demo-1"/);
   });
 });
