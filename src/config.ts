@@ -68,6 +68,23 @@ export const KEYBOARD = { step: 0.05, bigStep: 0.25 } as const;
 /** The 2018 version congratulated the player on every 100th sentence; so does this one. */
 export const MILESTONE_EVERY = 100;
 
+/**
+ * Ranks. Experience (XP) is every point the player has ever scored, so a rank is earned by
+ * playing well and playing often. The first rank needs 0 XP.
+ */
+export const RANKS = [
+  { minXp: 0, title: '見習撒網人' },
+  { minXp: 500, title: '捕語學徒' },
+  { minXp: 1500, title: '情緒漁夫' },
+  { minXp: 3500, title: '讀心漁師' },
+  { minXp: 7000, title: '共感船長' },
+  { minXp: 12000, title: '心海領航員' },
+  { minXp: 20000, title: '心海傳說' },
+] as const;
+
+/** How long a toast (achievement, rank up, milestone) stays on screen. */
+export const TOAST_MS = 4500;
+
 /** How many runs each mode keeps on this device's leaderboard. */
 export const LEADERBOARD_SIZE = 10;
 

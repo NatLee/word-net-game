@@ -215,17 +215,58 @@ describe('survival', () => {
   });
 });
 
+const old = (over: Partial<Annotation> = {}): Annotation => ({ sentenceId: 'x', text: 'x', guess: 1, reference: 0, mode: 'classic', name: '小明', points: 0, at: 'then', ...over });
+
 describe('milestones', () => {
-  it('congratulates on the hundredth answer, like the 2018 version', async () => {
-    const old: Annotation = { sentenceId: 'x', text: 'x', guess: 0, reference: 0, mode: 'classic', name: '小明', at: 'then' };
-    writeStored('annotations', Array.from({ length: 99 }, () => old));
+  it('congratulates on the hundredth answer, like the 2018 version, without stopping the game', async () => {
+    writeStored('annotations', Array.from({ length: 99 }, () => old()));
     const user = setup();
     expect(screen.getByText('再 1 句就到 100 句，每滿 100 句有小驚喜。')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /開始經典/ }));
     await answer(user, '7');
-    const dialog = screen.getByRole('dialog', { name: '恭喜！' });
-    expect(dialog).toHaveTextContent('你已經判斷了 100 句！');
-    expect(dialog).toHaveTextContent('離下一個一百又更近一步了呢！');
+    const toasts = screen.getByRole('status');
+    expect(toasts).toHaveTextContent('恭喜！你已經判斷了 100 句');
+    expect(toasts).toHaveTextContent('離下一個一百又更近一步了呢！');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '下一句' })).toHaveFocus(); // the game keeps going
+  });
+});
+
+describe('ranks and achievements', () => {
+  it('unlocks achievements as they happen and lists them in the profile', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    await answer(user, '7');
+    const toasts = screen.getByRole('status');
+    expect(toasts).toHaveTextContent('解鎖成就：第一網');
+    expect(toasts).toHaveTextContent('解鎖成就：正中紅心');
+    // The test game has a single pack, so answering once from it also visits every pack.
+    expect(Object.keys(saved('achievements'))).toEqual(['first-cast', 'bullseye', 'explorer']);
+
+    await user.click(screen.getByRole('button', { name: '離開' }));
+    await user.click(screen.getByRole('button', { name: '我的檔案' }));
+    const profile = screen.getByRole('dialog', { name: '小明 的檔案' });
+    expect(within(profile).getByText('第一網').closest('li')).toHaveTextContent('（已解鎖）');
+    expect(within(profile).getByText('零失誤').closest('li')).toHaveTextContent('（還沒解鎖）');
+    expect(within(profile).getByText('Lv.1')).toBeInTheDocument();
+  });
+
+  it('turns points into experience and announces a new rank', async () => {
+    writeStored('annotations', [old({ points: 450 })]); // 450 XP; the next rank starts at 500
+    const user = setup();
+    expect(screen.getByText('450 / 500 XP')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    await answer(user, '7'); // +100
+    expect(screen.getByRole('status')).toHaveTextContent('升級！Lv.2 捕語學徒');
+    for (let i = 1; i < MODES.classic.rounds; i++) {
+      await user.keyboard('{Enter}');
+      await answer(user, '7');
+    }
+    await user.keyboard('{Enter}');
+    const gains = screen.getByRole('list', { name: '這一局的收穫' });
+    expect(gains).toHaveTextContent('+1750 XP');
+    expect(gains).toHaveTextContent('升到 Lv.3 情緒漁夫'); // 450 + 1750 = 2200
+    expect(gains).toHaveTextContent('零失誤');
   });
 });
 

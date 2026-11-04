@@ -16,7 +16,7 @@ interface PlayProps {
   queue: readonly Sentence[];
   reducedMotion: boolean;
   /** Called once per locked-in guess. */
-  onAnswer: (result: RoundResult, mode: ModeId) => void;
+  onAnswer: (session: Session) => void;
   onFinish: (session: Session) => void;
   /** The player left before the end. */
   onQuit: (session: Session) => void;
@@ -37,8 +37,8 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
   useEffect(() => {
     if (session.results.length <= reported.current) return;
     reported.current = session.results.length;
-    callbacks.current.onAnswer(session.results[session.results.length - 1], session.mode);
-  }, [session.results, session.mode]);
+    callbacks.current.onAnswer(session);
+  }, [session]);
   useEffect(() => {
     if (session.phase === 'finished') callbacks.current.onFinish(session);
   }, [session]);

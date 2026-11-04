@@ -21,6 +21,7 @@ const answer = (over: Partial<Annotation> = {}): Annotation => ({
   reference: 0.85,
   mode: 'classic',
   name: '小明',
+  points: 95,
   at: '2026-11-04T08:00:00.000Z',
   ...over,
 });

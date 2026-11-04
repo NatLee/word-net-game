@@ -5,6 +5,7 @@ import { MODE_INFO, MODE_ORDER } from '../game/labels.ts';
 import { rankRuns } from '../lib/records.ts';
 import type { DailyRecord, ModeId, RunRecord, SentencePack } from '../types.ts';
 import { PackPicker } from './PackPicker.tsx';
+import { RankBar } from './Profile.tsx';
 import { ShareButtons } from './Share.tsx';
 
 const MODE_ICON: Record<ModeId, ComponentType<SVGProps<SVGSVGElement>>> = {
@@ -17,6 +18,7 @@ const MODE_ICON: Record<ModeId, ComponentType<SVGProps<SVGSVGElement>>> = {
 interface HomeProps {
   name: string;
   total: number;
+  xp: number;
   runs: readonly RunRecord[];
   /** Today's daily result, if the player already played it. */
   dailyDone?: DailyRecord;
@@ -28,7 +30,7 @@ interface HomeProps {
   onStart: (mode: ModeId) => void;
 }
 
-export function Home({ name, total, runs, dailyDone, dailyShareText, packs, packId, onPack, onStart }: HomeProps) {
+export function Home({ name, total, xp, runs, dailyDone, dailyShareText, packs, packId, onPack, onStart }: HomeProps) {
   const intoMilestone = total % MILESTONE_EVERY;
   const nextMilestone = total - intoMilestone + MILESTONE_EVERY;
 
@@ -53,16 +55,7 @@ export function Home({ name, total, runs, dailyDone, dailyShareText, packs, pack
             已經判斷 <span className="font-display text-xl font-bold tabular-nums text-slate-900 dark:text-white">{total}</span> 句
           </p>
         </div>
-        <div
-          className="h-2 overflow-hidden rounded-full bg-slate-900/10 dark:bg-white/10"
-          role="progressbar"
-          aria-label={`距離 ${nextMilestone} 句`}
-          aria-valuemin={0}
-          aria-valuemax={MILESTONE_EVERY}
-          aria-valuenow={intoMilestone}
-        >
-          <div className="bg-mood h-full rounded-full transition-[width] duration-700" style={{ width: `${(intoMilestone / MILESTONE_EVERY) * 100}%` }} />
-        </div>
+        <RankBar xp={xp} />
         <p className="text-xs text-slate-500 dark:text-slate-400">
           再 {nextMilestone - total} 句就到 {nextMilestone} 句，每滿 {MILESTONE_EVERY} 句有小驚喜。
         </p>

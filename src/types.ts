@@ -42,6 +42,8 @@ export interface Annotation {
   reference: number;
   mode: ModeId;
   name: string;
+  /** Points this answer scored, combo included: it counts as experience. */
+  points: number;
   /** ISO 8601 time of the answer. */
   at: string;
 }

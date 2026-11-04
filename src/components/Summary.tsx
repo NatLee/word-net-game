@@ -1,6 +1,8 @@
-import { House, RotateCcw, Trophy } from 'lucide-react';
+import { Award, ChevronsUp, House, RotateCcw, Sparkles, Trophy } from 'lucide-react';
+import type { Achievement } from '../game/achievements.ts';
 import { TIER_INFO } from '../game/labels.ts';
 import { percentOf } from '../game/scale.ts';
+import type { Rank } from '../game/progress.ts';
 import { formatScore } from '../game/scoring.ts';
 import { summarize, type Session } from '../game/session.ts';
 import { useCountUp } from '../hooks/useCountUp.ts';
@@ -8,19 +10,28 @@ import { ShareButtons } from './Share.tsx';
 import { TIER_STYLE } from './tiers.ts';
 import { Button } from './ui.tsx';
 
+/** What the run earned beyond its score. */
+export interface Gains {
+  xp: number;
+  /** The new rank, if the run reached one. */
+  rank: Rank | null;
+  achievements: readonly Achievement[];
+}
+
 interface SummaryProps {
   session: Session;
   title: string;
   shareText: string;
   /** True when this run tops the device leaderboard of its mode. */
   best: boolean;
+  gains: Gains;
   /** Null when the mode can only be played once a day. */
   onAgain: (() => void) | null;
   onHome: () => void;
   reducedMotion: boolean;
 }
 
-export function Summary({ session, title, shareText, best, onAgain, onHome, reducedMotion }: SummaryProps) {
+export function Summary({ session, title, shareText, best, gains, onAgain, onHome, reducedMotion }: SummaryProps) {
   const summary = summarize(session);
   const score = useCountUp(summary.score, 1200, reducedMotion);
   const stats = [
@@ -46,6 +57,23 @@ export function Summary({ session, title, shareText, best, onAgain, onHome, redu
             新紀錄！
           </p>
         )}
+        <ul className="mt-3 flex flex-wrap justify-center gap-2 text-sm font-semibold" aria-label="這一局的收穫">
+          <li className="flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 dark:bg-white/10">
+            <Sparkles className="size-4" aria-hidden="true" />+{gains.xp} XP
+          </li>
+          {gains.rank && (
+            <li className="bg-mood flex animate-pop items-center gap-1.5 rounded-full px-3 py-1 text-white">
+              <ChevronsUp className="size-4" aria-hidden="true" />
+              升到 Lv.{gains.rank.level} {gains.rank.title}
+            </li>
+          )}
+          {gains.achievements.map((a) => (
+            <li key={a.id} className="flex animate-pop items-center gap-1.5 rounded-full bg-amber-400/20 px-3 py-1 text-amber-800 dark:text-amber-200" title={a.description}>
+              <Award className="size-4" aria-hidden="true" />
+              {a.title}
+            </li>
+          ))}
+        </ul>
         <p className="mt-4 text-2xl tracking-[0.3em]" aria-label="每句的結果">
           {session.results.map((r, i) => (
             <span key={i} className={TIER_STYLE[r.tier].text} title={TIER_INFO[r.tier].label}>

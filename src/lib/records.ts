@@ -22,8 +22,15 @@ export function parseAnnotations(raw: unknown): Annotation[] | null {
       isNumber(a.reference) &&
       isMode(a.mode) &&
       isString(a.name) &&
+      isNumber(a.points) &&
       isString(a.at),
   );
+}
+
+/** Unlocked achievements: id → ISO time of unlocking. */
+export function parseUnlocked(raw: unknown): Record<string, string> | null {
+  if (!isObject(raw) || Array.isArray(raw)) return null;
+  return Object.fromEntries(Object.entries(raw).filter(([, at]) => isString(at))) as Record<string, string>;
 }
 
 export function parseRuns(raw: unknown): RunRecord[] | null {

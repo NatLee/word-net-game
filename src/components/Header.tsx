@@ -1,10 +1,10 @@
-import { CircleHelp, Monitor, Moon, Settings, Sun, Trophy, Volume2, VolumeX } from 'lucide-react';
+import { Award, CircleHelp, Monitor, Moon, Settings, Sun, Trophy, Volume2, VolumeX } from 'lucide-react';
 import { GAME_TITLE } from '../config.ts';
 import { nextMode } from '../lib/color-mode.ts';
 import type { ColorMode } from '../types.ts';
 import { IconButton, Logo } from './ui.tsx';
 
-export type Panel = 'tutorial' | 'leaderboard' | 'settings';
+export type Panel = 'tutorial' | 'leaderboard' | 'profile' | 'settings';
 
 const COLOR_ICON = { system: Monitor, light: Sun, dark: Moon };
 const COLOR_LABEL = { system: '跟系統', light: '淺色', dark: '深色' };
@@ -46,6 +46,9 @@ export function Header({ total, playing, onOpen, sound, onSound, colorMode, onCo
               </IconButton>
               <IconButton label="排行榜" onClick={() => onOpen('leaderboard')}>
                 <Trophy className="size-5" aria-hidden="true" />
+              </IconButton>
+              <IconButton label="我的檔案" onClick={() => onOpen('profile')}>
+                <Award className="size-5" aria-hidden="true" />
               </IconButton>
               <IconButton label="設定" onClick={() => onOpen('settings')}>
                 <Settings className="size-5" aria-hidden="true" />
