@@ -11,7 +11,7 @@ import { Toaster, type Toast } from './components/Toaster.tsx';
 import { Tutorial } from './components/Tutorial.tsx';
 import { ACHIEVEMENTS, satisfied, type AchievementContext } from './game/achievements.ts';
 import { MODE_INFO } from './game/labels.ts';
-import { rankUp, xpOf } from './game/progress.ts';
+import { rankFor, rankUp, xpOf } from './game/progress.ts';
 import { localDateKey } from './game/random.ts';
 import { distance, tierFor } from './game/scoring.ts';
 import { dealSentences, lastResult, summarize, type Session } from './game/session.ts';
@@ -216,6 +216,9 @@ export function App({ packs, now = () => new Date() }: AppProps) {
           <Summary
             session={finished.session}
             title={[MODE_INFO[finished.session.mode].title, dateOf(finished.session.mode)].filter(Boolean).join(' ')}
+            name={name}
+            rank={rankFor(xp)}
+            url={gameUrl()}
             shareText={shareFor(finished.session.mode, { ...finished.summary, tiers: finished.session.results.map((r) => r.tier) })}
             best={screen.best}
             gains={screen.gains}

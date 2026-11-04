@@ -90,7 +90,7 @@ describe('a classic run', () => {
     expect(screen.getByLabelText('目前 1750 分')).toBeInTheDocument();
     await user.keyboard('{Enter}'); // 看結算
 
-    expect(screen.getByText('1750')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /成績卡：1750 分，10 句/ })).toBeInTheDocument();
     expect(screen.getByText('新紀錄！')).toBeInTheDocument();
     expect(screen.getByLabelText(`已經判斷 ${MODES.classic.rounds} 句`)).toBeInTheDocument();
     expect(saved('annotations')).toHaveLength(MODES.classic.rounds);
@@ -158,7 +158,7 @@ describe('the daily challenge', () => {
       await answer(user, i === 0 ? '1' : '7');
       await user.keyboard('{Enter}');
     }
-    expect(screen.getByText('每日挑戰 2026-11-04')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '每日挑戰 2026-11-04' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '再玩一次' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '複製成績' }));
@@ -193,7 +193,7 @@ describe('the timed mode', () => {
     expect(screen.getByRole('timer')).toHaveAccessibleName(`剩下 ${MODES.rush.seconds - 5} 秒`);
 
     act(() => vi.advanceTimersByTime(MODES.rush.seconds * 1000));
-    expect(screen.getByText('限時')).toBeInTheDocument(); // summary title
+    expect(screen.getByRole('heading', { name: '限時' })).toBeInTheDocument(); // summary title
     expect(screen.getByRole('button', { name: '再玩一次' })).toBeInTheDocument();
   });
 });
@@ -210,7 +210,7 @@ describe('survival', () => {
     }
     expect(screen.getByRole('button', { name: '看結算' })).toBeInTheDocument();
     await user.keyboard('{Enter}');
-    expect(screen.getByText('生存')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '生存' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '再玩一次' })).toBeInTheDocument();
   });
 });
