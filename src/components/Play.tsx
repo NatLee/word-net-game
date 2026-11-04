@@ -135,7 +135,13 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
       )}
 
       <div aria-live="polite" className="sr-only">
-        {result && `${TIER_INFO[result.tier].label}！參考分數 ${formatScore(result.sentence.score)}，你猜 ${formatScore(result.guess)}，得到 ${result.points} 分。`}
+        {result &&
+          [
+            `${TIER_INFO[result.tier].label}！參考分數 ${formatScore(result.sentence.score)}，你猜 ${formatScore(result.guess)}，得到 ${result.points} 分。`,
+            result.sentence.note,
+          ]
+            .filter(Boolean)
+            .join('')}
       </div>
 
       {result ? (

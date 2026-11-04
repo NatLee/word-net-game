@@ -162,7 +162,7 @@ export function Duo({ names, queue, url, onRound, onFinish, onRematch, onHome }:
         </div>
       )}
       <div aria-live="polite" className="sr-only">
-        {revealed && resultA && resultB && `參考分數 ${formatScore(sentence.score)}。${a.name} ${resultA.points} 分，${b.name} ${resultB.points} 分。`}
+        {revealed && resultA && resultB && `參考分數 ${formatScore(sentence.score)}。${a.name} ${resultA.points} 分，${b.name} ${resultB.points} 分。${sentence.note ?? ''}`}
       </div>
     </section>
   );
