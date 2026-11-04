@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { LEADERBOARD_SIZE, MILESTONE_EVERY, MODES, SOURCE_URL } from './config.ts';
 import { Celebration } from './components/Celebration.tsx';
 import { Leaderboard, Settings, Welcome } from './components/dialogs.tsx';
@@ -18,7 +18,7 @@ import { parseName } from './lib/name.ts';
 import { gameUrl } from './lib/paths.ts';
 import { addRun, crossedMilestone, parseAnnotations, parseDaily, parseRuns, rankRuns } from './lib/records.ts';
 import { playCue } from './lib/sound.ts';
-import type { Annotation, DailyRecord, ModeId, RunRecord, Sentence } from './types.ts';
+import type { Annotation, DailyRecord, ModeId, RunRecord, Sentence, SentencePack } from './types.ts';
 
 type Screen =
   | { kind: 'home' }
@@ -28,13 +28,13 @@ type Screen =
 const parseBool = (raw: unknown) => (typeof raw === 'boolean' ? raw : null);
 
 interface AppProps {
-  /** Every sentence the game can deal. */
-  pool: readonly Sentence[];
+  /** The sentence packs the game can deal from. */
+  packs: readonly SentencePack[];
   /** The clock, replaceable in tests. */
   now?: () => Date;
 }
 
-export function App({ pool, now = () => new Date() }: AppProps) {
+export function App({ packs, now = () => new Date() }: AppProps) {
   const reducedMotion = useReducedMotion();
   const { mode: colorMode, setMode: setColorMode } = useColorMode();
   const [name, setName] = useStored('name', parseName, '');
@@ -42,6 +42,9 @@ export function App({ pool, now = () => new Date() }: AppProps) {
   const [annotations, setAnnotations] = useStored<Annotation[]>('annotations', parseAnnotations, []);
   const [runs, setRuns] = useStored<RunRecord[]>('runs', parseRuns, []);
   const [daily, setDaily] = useStored<Record<string, DailyRecord>>('daily', parseDaily, {});
+  // The chosen pack; null (or a pack that no longer exists) means all packs.
+  const [packId, setPackId] = useStored<string | null>('pack', (raw) => (packs.some((p) => p.id === raw) ? (raw as string) : null), null);
+  const everything = useMemo(() => packs.flatMap((p) => p.sentences), [packs]);
   const [screen, setScreen] = useState<Screen>({ kind: 'home' });
   const [panel, setPanel] = useState<Panel | null>(null);
   const [milestone, setMilestone] = useState<number | null>(null);
@@ -53,6 +56,9 @@ export function App({ pool, now = () => new Date() }: AppProps) {
   const start = (mode: ModeId) => {
     if (MODES[mode].seededByDate && daily[today]) return; // one daily run per day
     runCounter.current += 1;
+    // Date-seeded modes always deal from every pack, so everyone gets the same sentences that day.
+    const chosen = packs.find((p) => p.id === packId);
+    const pool = MODES[mode].seededByDate || !chosen ? everything : chosen.sentences;
     setScreen({ kind: 'play', mode, queue: dealSentences(mode, pool, today), run: runCounter.current });
   };
 
@@ -124,6 +130,9 @@ export function App({ pool, now = () => new Date() }: AppProps) {
             runs={runs}
             dailyDone={todayRecord}
             dailyShareText={todayRecord && shareFor('daily', todayRecord)}
+            packs={packs}
+            packId={packId}
+            onPack={setPackId}
             onStart={start}
           />
         )}

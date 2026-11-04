@@ -5,7 +5,7 @@ import type { ModeId, Tier } from '../types.ts';
 export const MODE_INFO: Record<ModeId, { title: string; blurb: string }> = {
   classic: { title: '經典', blurb: `${MODES.classic.rounds} 句，慢慢想，看你有多懂人心。` },
   rush: { title: '限時', blurb: `${MODES.rush.seconds} 秒內答越多越好，揭曉時不計時。` },
-  daily: { title: '每日挑戰', blurb: `每天同一組 ${MODES.daily.rounds} 句，一天一次，可以分享成績。` },
+  daily: { title: '每日挑戰', blurb: `每天同一組 ${MODES.daily.rounds} 句（從全部題庫挑），一天一次，可以分享成績。` },
 };
 
 export const MODE_ORDER: readonly ModeId[] = ['classic', 'rush', 'daily'];

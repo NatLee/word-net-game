@@ -3,7 +3,8 @@ import type { ComponentType, SVGProps } from 'react';
 import { MILESTONE_EVERY, MODES } from '../config.ts';
 import { MODE_INFO, MODE_ORDER } from '../game/labels.ts';
 import { rankRuns } from '../lib/records.ts';
-import type { DailyRecord, ModeId, RunRecord } from '../types.ts';
+import type { DailyRecord, ModeId, RunRecord, SentencePack } from '../types.ts';
+import { PackPicker } from './PackPicker.tsx';
 import { ShareButtons } from './Share.tsx';
 
 const MODE_ICON: Record<ModeId, ComponentType<SVGProps<SVGSVGElement>>> = {
@@ -19,10 +20,14 @@ interface HomeProps {
   /** Today's daily result, if the player already played it. */
   dailyDone?: DailyRecord;
   dailyShareText?: string;
+  packs: readonly SentencePack[];
+  /** The chosen pack, or null for all. */
+  packId: string | null;
+  onPack: (packId: string | null) => void;
   onStart: (mode: ModeId) => void;
 }
 
-export function Home({ name, total, runs, dailyDone, dailyShareText, onStart }: HomeProps) {
+export function Home({ name, total, runs, dailyDone, dailyShareText, packs, packId, onPack, onStart }: HomeProps) {
   const intoMilestone = total % MILESTONE_EVERY;
   const nextMilestone = total - intoMilestone + MILESTONE_EVERY;
 
@@ -61,6 +66,8 @@ export function Home({ name, total, runs, dailyDone, dailyShareText, onStart }: 
           再 {nextMilestone - total} 句就到 {nextMilestone} 句，每滿 {MILESTONE_EVERY} 句有小驚喜。
         </p>
       </div>
+
+      <PackPicker packs={packs} value={packId} onChange={onPack} />
 
       <ul className="grid gap-4 sm:grid-cols-3">
         {MODE_ORDER.map((mode, i) => {

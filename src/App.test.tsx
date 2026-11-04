@@ -5,10 +5,12 @@ import { App } from './App.tsx';
 import { MODES, RUSH_REVEAL_MS } from './config.ts';
 import { storageKey, writeStored } from './lib/storage.ts';
 import { media } from './test/setup.ts';
-import type { Annotation, Sentence } from './types.ts';
+import type { Annotation, Sentence, SentencePack } from './types.ts';
 
 // Every sentence scores +0.5, so pressing 7 (= +0.5) is always perfect, whatever order they are dealt in.
 const pool: Sentence[] = Array.from({ length: 12 }, (_, i) => ({ id: `t-${i}`, text: `測試句子 ${i}`, score: 0.5, tags: [], pack: 'test' }));
+const pack = (id: string, title: string, sentences: Sentence[]): SentencePack => ({ id, title, language: 'zh-TW', source: 'test', license: 'CC0-1.0', sentences });
+const packs = [pack('test', '測試', pool)];
 const now = () => new Date(2026, 10, 4, 9, 30);
 
 const saved = (name: string) => JSON.parse(localStorage.getItem(storageKey(name)) ?? 'null');
@@ -16,7 +18,7 @@ const saved = (name: string) => JSON.parse(localStorage.getItem(storageKey(name)
 function setup({ named = true }: { named?: boolean } = {}) {
   if (named) writeStored('name', '小明');
   const user = userEvent.setup();
-  render(<App pool={pool} now={now} />);
+  render(<App packs={packs} now={now} />);
   return user;
 }
 
@@ -123,6 +125,29 @@ describe('a classic run', () => {
   });
 });
 
+describe('sentence packs', () => {
+  it('deal only from the chosen pack, remember the choice, and leave the daily challenge on every pack', async () => {
+    const sad = Array.from({ length: 3 }, (_, i) => ({ id: `sad-${i}`, text: `難過的句子 ${i}`, score: -0.5, tags: [], pack: 'sad' }));
+    writeStored('name', '小明');
+    const user = userEvent.setup();
+    render(<App packs={[pack('test', '測試', pool), pack('sad', '難過', sad)]} now={now} />);
+
+    const picker = screen.getByRole('radiogroup', { name: '題庫' });
+    expect(within(picker).getByRole('radio', { name: /全部/ })).toHaveAttribute('aria-checked', 'true');
+    expect(within(picker).getByRole('radio', { name: /^難過s*3$/ })).toBeInTheDocument();
+    await user.click(within(picker).getByRole('radio', { name: /難過/ }));
+    expect(saved('pack')).toBe('sad');
+
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    expect(screen.getByText(/^難過的句子/)).toBeInTheDocument();
+    expect(screen.getByText('第 1 / 3 句', { exact: false })).toBeInTheDocument(); // the pack only has 3
+
+    await user.click(screen.getByRole('button', { name: '離開' }));
+    await user.click(screen.getByRole('button', { name: /開始每日挑戰/ }));
+    expect(screen.getByText(`第 1 / ${MODES.daily.rounds} 句`, { exact: false })).toBeInTheDocument(); // dealt from both packs
+  });
+});
+
 describe('the daily challenge', () => {
   it('can be played once a day and shared as text', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
@@ -153,7 +178,7 @@ describe('the timed mode', () => {
   it('counts down only while guessing, moves on by itself and ends when time is up', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
     writeStored('name', '小明');
-    render(<App pool={pool} now={now} />);
+    render(<App packs={packs} now={now} />);
     fireEvent.click(screen.getByRole('button', { name: /開始限時/ }));
     expect(screen.getByRole('timer')).toHaveAccessibleName(`剩下 ${MODES.rush.seconds} 秒`);
 
