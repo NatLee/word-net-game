@@ -8,6 +8,7 @@ const good = {
   title: 'Demo',
   language: 'zh-TW',
   source: 'test',
+  license: 'CC0-1.0',
   sentences: [{ id: 'demo-1', text: '好開心', score: 0.8, tags: ['日常'] }],
 };
 
@@ -15,6 +16,10 @@ describe('the bundled packs', () => {
   it('load and validate', () => {
     expect(packs.length).toBeGreaterThan(0);
     for (const pack of packs) expect(pack.source).toMatch(/原創/);
+  });
+
+  it('are all CC BY 4.0, as src/data/packs/LICENSE says', () => {
+    for (const pack of packs) expect(pack.license, pack.id).toBe('CC-BY-4.0');
   });
 
   it('have enough sentences for every round-based mode', () => {
@@ -70,6 +75,10 @@ describe('validatePack', () => {
         'bad.json sentences[2].note: must be a non-empty string when present',
       ]);
     }
+  });
+
+  it('requires a license', () => {
+    expect(validatePack({ ...good, license: undefined }, 'x.json')).toEqual({ ok: false, errors: ['x.json license: must be a non-empty string'] });
   });
 
   it('rejects files that are not packs', () => {

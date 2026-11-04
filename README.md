@@ -139,6 +139,7 @@ push 到 `master` 時，deploy workflow 會跑 lint、測試、build，再部署
   "title": "我的題庫",
   "language": "zh-TW",
   "source": "原創：為 word-net-game 撰寫的句子和參考分數。",
+  "license": "CC-BY-4.0",
   "sentences": [
     { "id": "mine-001", "text": "今天的晚餐超好吃！", "score": 0.8, "tags": ["吃"] },
     { "id": "mine-002", "text": "我沒事，真的。", "score": -0.4, "tags": ["話中有話"], "note": "會特別強調「真的」，通常是有事。" }
@@ -149,7 +150,8 @@ push 到 `master` 時，deploy workflow 會跑 lint、測試、build，再部署
 | 欄位 | 規則 |
 |---|---|
 | `id`（題庫） | 小寫英文、數字和 `-`，不能跟別的題庫重複 |
-| `source` | 句子和分數從哪裡來、用什麼授權。用別人的資料集時，寫上出處和授權 |
+| `source` | 句子和分數從哪裡來。用別人的資料集時，寫上出處 |
+| `license` | 句子和分數的授權，用 SPDX 代碼（例如 `CC-BY-4.0`）。這個資料夾的 [LICENSE](src/data/packs/LICENSE) 說明內建題庫都是 CC BY 4.0；加入別的授權的題庫時，記得一起更新 |
 | `sentences[].id` | 小寫英文、數字和 `-`，**所有題庫加起來**不能重複。紀錄和每日挑戰靠它認句子，發佈後不要改 |
 | `sentences[].text` | 1–60 個字 |
 | `sentences[].score` | 參考分數，-1 到 1，兩位小數 |
@@ -168,7 +170,8 @@ Error: Sentence packs are invalid:
 ## 題庫和授權
 
 - 兩個內建題庫（日常短句 49 句、話中有話 30 句）的句子和參考分數，都是為這個專案原創的，沒有取自任何資料集或網站。參考分數是一種看法，不是標準答案；猜得跟它不一樣，不代表你錯了。
-- 這個 repo 目前還沒有授權條款（LICENSE 檔）。
+- **程式碼**用 [MIT 授權](LICENSE)（Copyright NatLee）。
+- **句子和參考分數**（[`src/data/packs/`](src/data/packs/) 裡的 JSON）用 [CC BY 4.0](src/data/packs/LICENSE)：可以複製、改寫、商用，只要註明出處，例如「“Word Net sentence packs” by NatLee（https://github.com/NatLee/word-net-game），CC BY 4.0」。每個題庫的 `license` 欄位也寫著它的授權。
 - 字型 [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) 用 SIL Open Font License 1.1；圖示 [Lucide](https://lucide.dev/) 用 ISC 授權。音效是程式即時合成的，沒有音檔。
 
 ## 2018 年的原版

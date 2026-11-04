@@ -1,6 +1,7 @@
 {
   "name": "word-net-game",
   "private": true,
+  "license": "MIT",
   "version": "0.0.0",
   "description": "Read a sentence, guess how happy or sad it is, and see how close you got. A small mood-guessing web game.",
   "type": "module",

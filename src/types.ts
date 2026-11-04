@@ -27,8 +27,10 @@ export interface SentencePack {
   title: string;
   /** BCP 47 language tag of the sentences, e.g. zh-TW. */
   language: string;
-  /** Where the sentences and scores come from, and under which terms. */
+  /** Where the sentences and scores come from. */
   source: string;
+  /** License of the sentences and scores, as an SPDX identifier (e.g. CC-BY-4.0). */
+  license: string;
   sentences: Sentence[];
 }
 
