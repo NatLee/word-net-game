@@ -10,6 +10,31 @@ import { NameField } from './NameField.tsx';
 import { Button } from './ui.tsx';
 
 
+/** Before a duo match: who plays against the device's own player. */
+export function DuoSetup({ owner, onStart, onClose }: { owner: string; onStart: (names: [string, string]) => void; onClose: () => void }) {
+  const [value, setValue] = useState('');
+  const rival = validName(value);
+  return (
+    <Modal title="雙人對戰" onClose={onClose}>
+      <form
+        className="flex flex-col gap-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (rival) onStart([owner, rival]);
+        }}
+      >
+        <p className="text-slate-600 dark:text-slate-300">
+          兩個人用同一台裝置，輪流在同一句話上撒網。{owner} 先撒，撒好網子就會藏起來；換對手撒完，再一起揭曉。分數高的人贏。
+        </p>
+        <NameField value={value} onChange={setValue} autoFocus label="對手的名字" />
+        <Button type="submit" variant="primary" disabled={!rival}>
+          開始對戰
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
 /** First visit: ask for a name (the 2018 version opened with the same request). */
 export function Welcome({ onDone }: { onDone: (name: string, tutorial: boolean) => void }) {
   const [value, setValue] = useState('');

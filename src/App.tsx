@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
-import { LEADERBOARD_SIZE, MILESTONE_EVERY, MODES, SOURCE_URL } from './config.ts';
+import { DUO, LEADERBOARD_SIZE, MILESTONE_EVERY, MODES, SOURCE_URL } from './config.ts';
 import { Confetti } from './components/Confetti.tsx';
-import { Leaderboard, Settings, Welcome } from './components/dialogs.tsx';
+import { DuoSetup, Leaderboard, Settings, Welcome } from './components/dialogs.tsx';
+import { Duo } from './components/Duo.tsx';
 import { Header, type Panel } from './components/Header.tsx';
 import { Home } from './components/Home.tsx';
 import { Play } from './components/Play.tsx';
@@ -12,7 +13,8 @@ import { Tutorial } from './components/Tutorial.tsx';
 import { ACHIEVEMENTS, satisfied, type AchievementContext } from './game/achievements.ts';
 import { MODE_INFO } from './game/labels.ts';
 import { rankFor, rankUp, xpOf } from './game/progress.ts';
-import { localDateKey } from './game/random.ts';
+import { duoSentence, type DuoSession } from './game/duo.ts';
+import { localDateKey, shuffle } from './game/random.ts';
 import { distance, tierFor } from './game/scoring.ts';
 import { dealSentences, lastResult, summarize, type Session } from './game/session.ts';
 import { shareText } from './game/share.ts';
@@ -28,7 +30,8 @@ import type { Annotation, DailyRecord, ModeId, RunRecord, Sentence, SentencePack
 type Screen =
   | { kind: 'home' }
   | { kind: 'play'; mode: ModeId; queue: Sentence[]; run: number; xpAtStart: number }
-  | { kind: 'summary'; session: Session; best: boolean; gains: Gains };
+  | { kind: 'summary'; session: Session; best: boolean; gains: Gains }
+  | { kind: 'duo'; names: [string, string]; queue: Sentence[]; run: number };
 
 const parseBool = (raw: unknown) => (typeof raw === 'boolean' ? raw : null);
 
@@ -52,6 +55,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
   const [packId, setPackId] = useStored<string | null>('pack', (raw) => (packs.some((p) => p.id === raw) ? (raw as string) : null), null);
   const [screen, setScreen] = useState<Screen>({ kind: 'home' });
   const [panel, setPanel] = useState<Panel | null>(null);
+  const [duoSetup, setDuoSetup] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [confetti, setConfetti] = useState<number | null>(null);
   const runCounter = useRef(0);
@@ -64,8 +68,10 @@ export function App({ packs, now = () => new Date() }: AppProps) {
   const packIds = useMemo(() => packs.map((p) => p.id), [packs]);
 
   const today = localDateKey(now());
-  const total = annotations.length;
-  const xp = xpOf(annotations);
+  // The device owner's own answers; a duo guest's only count in the per-name ranking.
+  const own = useMemo(() => annotations.filter((a) => !a.guest), [annotations]);
+  const total = own.length;
+  const xp = xpOf(own);
 
   const notify = (toast: Omit<Toast, 'id'>) => {
     toastCounter.current += 1;
@@ -89,46 +95,75 @@ export function App({ packs, now = () => new Date() }: AppProps) {
     return fresh;
   };
 
+  const chosenPool = () => packs.find((p) => p.id === packId)?.sentences ?? everything;
+
   const start = (mode: ModeId) => {
     if (MODES[mode].seededByDate && daily[today]) return; // one daily run per day
     runCounter.current += 1;
     runUnlocks.current = [];
     // Date-seeded modes always deal from every pack, so everyone gets the same sentences that day.
-    const chosen = packs.find((p) => p.id === packId);
-    const pool = MODES[mode].seededByDate || !chosen ? everything : chosen.sentences;
+    const pool = MODES[mode].seededByDate ? everything : chosenPool();
     setScreen({ kind: 'play', mode, queue: dealSentences(mode, pool, today), run: runCounter.current, xpAtStart: xp });
   };
 
-  const onAnswer = (session: Session) => {
-    const result = lastResult(session)!;
-    const answer: Annotation = {
-      sentenceId: result.sentence.id,
-      text: result.sentence.text,
-      guess: result.guess,
-      reference: result.sentence.score,
-      mode: session.mode,
-      name,
-      points: result.points,
-      at: now().toISOString(),
-    };
-    const answers = [...annotations, answer];
-    setAnnotations(answers);
+  const startDuo = (names: [string, string]) => {
+    setDuoSetup(false);
+    runCounter.current += 1;
+    runUnlocks.current = [];
+    setScreen({ kind: 'duo', names, queue: shuffle(chosenPool()).slice(0, DUO.rounds), run: runCounter.current });
+  };
 
-    let cue: Cue = result.tier;
+  /**
+   * Stores the owner's answer (plus any guest answers of the same round), then handles the
+   * milestone, rank up, achievements and the sound for it.
+   */
+  const record = (answer: Annotation, guests: Annotation[], tier: Cue, session?: Session) => {
+    const answers = [...own, answer];
+    setAnnotations([...annotations, answer, ...guests]);
+
+    let cue: Cue = tier;
     const reached = crossedMilestone(total, answers.length, MILESTONE_EVERY);
     if (reached) {
       notify({ kind: 'milestone', title: `恭喜！你已經判斷了 ${reached} 句`, body: '離下一個一百又更近一步了呢！' });
       celebrate(reached);
       cue = 'milestone';
     }
-    const rank = rankUp(xp, xp + result.points);
+    const rank = rankUp(xp, xp + answer.points);
     if (rank) {
-      notify({ kind: 'rank', title: `升級！Lv.${rank.level} ${rank.title}`, body: `經驗值 ${xp + result.points} XP` });
+      notify({ kind: 'rank', title: `升級！Lv.${rank.level} ${rank.title}`, body: `經驗值 ${xp + answer.points} XP` });
       celebrate(rank.level * 1000);
       cue = 'milestone';
     }
-    if (unlockFrom({ answers, session, finished: false }).length > 0 && cue === result.tier) cue = 'unlock';
+    if (unlockFrom({ answers, session, finished: false }).length > 0 && cue === tier) cue = 'unlock';
     if (sound) playCue(cue);
+  };
+
+  const answerOf = (sentence: Sentence, guess: number, points: number, mode: Annotation['mode'], who: string): Annotation => ({
+    sentenceId: sentence.id,
+    text: sentence.text,
+    guess,
+    reference: sentence.score,
+    mode,
+    name: who,
+    points,
+    at: now().toISOString(),
+  });
+
+  const onAnswer = (session: Session) => {
+    const result = lastResult(session)!;
+    record(answerOf(result.sentence, result.guess, result.points, session.mode, name), [], result.tier, session);
+  };
+
+  const onDuoRound = (match: DuoSession) => {
+    const sentence = duoSentence(match);
+    const [a, b] = match.players;
+    const [ra, rb] = [a.results.at(-1)!, b.results.at(-1)!];
+    const guest = { ...answerOf(sentence, b.guess ?? 0, rb.points, 'duo', b.name), guest: true };
+    record(answerOf(sentence, a.guess ?? 0, ra.points, 'duo', name), [guest], ra.tier);
+  };
+
+  const onDuoFinish = () => {
+    unlockFrom({ answers: own, finished: true, duo: true });
   };
 
   const finish = (session: Session) => {
@@ -150,7 +185,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
       days = { ...daily, [today]: record };
       setDaily(days);
     }
-    unlockFrom({ answers: annotations, session, finished: true, daily: days });
+    unlockFrom({ answers: own, session, finished: true, daily: days });
     const xpAtStart = screen.kind === 'play' ? screen.xpAtStart : xp;
     const gains: Gains = {
       xp: summary.score,
@@ -170,7 +205,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
   const shareFor = (mode: ModeId, result: Omit<DailyRecord, 'date'>) => shareText({ mode, date: dateOf(mode), ...result, url: gameUrl() });
   const todayRecord = daily[today];
   const finished = screen.kind === 'summary' ? { session: screen.session, summary: summarize(screen.session) } : null;
-  const perfects = annotations.filter((a) => tierFor(distance(a.guess, a.reference)) === 'perfect').length;
+  const perfects = own.filter((a) => tierFor(distance(a.guess, a.reference)) === 'perfect').length;
   const bestStreak = runs.reduce((best, r) => Math.max(best, r.bestStreak), 0);
 
   return (
@@ -178,7 +213,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
       <Backdrop />
       <Header
         total={total}
-        playing={screen.kind === 'play'}
+        playing={screen.kind === 'play' || screen.kind === 'duo'}
         onOpen={setPanel}
         sound={sound}
         onSound={setSound}
@@ -199,6 +234,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
             packId={packId}
             onPack={setPackId}
             onStart={start}
+            onDuo={() => setDuoSetup(true)}
           />
         )}
         {screen.kind === 'play' && (
@@ -210,6 +246,18 @@ export function App({ packs, now = () => new Date() }: AppProps) {
             onAnswer={onAnswer}
             onFinish={finish}
             onQuit={quit}
+          />
+        )}
+        {screen.kind === 'duo' && (
+          <Duo
+            key={screen.run}
+            names={screen.names}
+            queue={screen.queue}
+            url={gameUrl()}
+            onRound={onDuoRound}
+            onFinish={onDuoFinish}
+            onRematch={() => startDuo(screen.names)}
+            onHome={() => setScreen({ kind: 'home' })}
           />
         )}
         {screen.kind === 'summary' && finished && (
@@ -247,6 +295,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
           }}
         />
       )}
+      {name && duoSetup && <DuoSetup owner={name} onStart={startDuo} onClose={() => setDuoSetup(false)} />}
       {name && panel === 'tutorial' && <Tutorial onClose={() => setPanel(null)} />}
       {name && panel === 'leaderboard' && <Leaderboard runs={runs} annotations={annotations} onClose={() => setPanel(null)} />}
       {name && panel === 'profile' && (

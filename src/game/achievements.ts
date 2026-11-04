@@ -16,6 +16,8 @@ export interface AchievementContext {
   session?: Session;
   /** True on the check made when the run ends. */
   finished: boolean;
+  /** True on the check made when a duo match ends. */
+  duo?: boolean;
   daily: Readonly<Record<string, DailyRecord>>;
 }
 
@@ -132,6 +134,7 @@ function defineAchievements(): Achievement[] {
         return c.packIds.every((id) => seen.has(id));
       },
     },
+    { id: 'duel', title: '雙人對決', description: '和朋友在同一台裝置上打完一場雙人對戰。', check: (c) => c.duo === true },
   ];
 }
 

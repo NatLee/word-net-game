@@ -2,6 +2,9 @@ import type { MODES } from './config.ts';
 
 export type ModeId = keyof typeof MODES;
 
+/** Every way to play: the solo modes plus the two-player match. */
+export type PlayMode = ModeId | 'duo';
+
 /** How close a guess was, best first. */
 export type Tier = 'perfect' | 'close' | 'near' | 'miss';
 
@@ -40,8 +43,10 @@ export interface Annotation {
   text: string;
   guess: number;
   reference: number;
-  mode: ModeId;
+  mode: PlayMode;
   name: string;
+  /** True for the second player of a duo match: their answers count in the per-name ranking, not in this device's own count, XP or achievements. */
+  guest?: boolean;
   /** Points this answer scored, combo included: it counts as experience. */
   points: number;
   /** ISO 8601 time of the answer. */

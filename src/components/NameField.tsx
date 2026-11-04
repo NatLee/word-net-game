@@ -1,12 +1,22 @@
 import { useId } from 'react';
 import { NAME_MAX_LENGTH } from '../config.ts';
 
-export function NameField({ value, onChange, autoFocus = false }: { value: string; onChange: (value: string) => void; autoFocus?: boolean }) {
+export function NameField({
+  value,
+  onChange,
+  autoFocus = false,
+  label = '你的名字',
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  autoFocus?: boolean;
+  label?: string;
+}) {
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-sm font-semibold">
-        你的名字
+        {label}
       </label>
       <input
         id={id}

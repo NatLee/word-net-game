@@ -1,12 +1,13 @@
 import { MODES } from '../config.ts';
 import { TIERS } from '../game/scoring.ts';
-import type { Annotation, DailyRecord, ModeId, RunRecord } from '../types.ts';
+import type { Annotation, DailyRecord, ModeId, PlayMode, RunRecord } from '../types.ts';
 
 const MODE_IDS = Object.keys(MODES) as ModeId[];
 
 const isString = (v: unknown): v is string => typeof v === 'string';
 const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const isMode = (v: unknown): v is ModeId => isString(v) && (MODE_IDS as string[]).includes(v);
+const isPlayMode = (v: unknown): v is PlayMode => v === 'duo' || isMode(v);
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 
 // Parsers for what comes back from localStorage: entries that don't fit the format are dropped.
@@ -20,7 +21,8 @@ export function parseAnnotations(raw: unknown): Annotation[] | null {
       isString(a.text) &&
       isNumber(a.guess) &&
       isNumber(a.reference) &&
-      isMode(a.mode) &&
+      isPlayMode(a.mode) &&
+      (a.guest === undefined || typeof a.guest === 'boolean') &&
       isString(a.name) &&
       isNumber(a.points) &&
       isString(a.at),

@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App.tsx';
-import { MODES, RUSH_REVEAL_MS } from './config.ts';
+import { DUO, MODES, RUSH_REVEAL_MS } from './config.ts';
 import { storageKey, writeStored } from './lib/storage.ts';
 import { media } from './test/setup.ts';
 import type { Annotation, Sentence, SentencePack } from './types.ts';
@@ -216,6 +216,41 @@ describe('survival', () => {
 });
 
 const old = (over: Partial<Annotation> = {}): Annotation => ({ sentenceId: 'x', text: 'x', guess: 1, reference: 0, mode: 'classic', name: '小明', points: 0, at: 'then', ...over });
+
+describe('duo', () => {
+  it('lets two players take turns, hides the first net, and keeps the guest out of the owner count', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: /開始雙人對戰/ }));
+    const dialog = screen.getByRole('dialog', { name: '雙人對戰' });
+    await user.type(within(dialog).getByLabelText('對手的名字'), '阿華');
+    await user.click(within(dialog).getByRole('button', { name: '開始對戰' }));
+
+    for (let i = 0; i < DUO.rounds; i++) {
+      expect(screen.getByText(/輪到/)).toHaveTextContent('輪到 小明 撒網');
+      await answer(user, '7'); // 小明: spot on
+      expect(screen.getByText(/輪到/)).toHaveTextContent('輪到 阿華 撒網（小明 的網子先藏起來了）');
+      expect(screen.getByRole('slider')).toHaveAttribute('aria-valuenow', '0'); // the second net starts in the middle
+      await answer(user, '5'); // 阿華: 0.5 off
+      expect(screen.getByText(/這句/)).toHaveTextContent('這句 小明 贏！');
+      await user.keyboard('{Enter}');
+    }
+    expect(screen.getByRole('heading', { name: '雙人對戰' })).toBeInTheDocument();
+    expect(screen.getByText(/贏了！/)).toHaveTextContent('小明 贏了！');
+    expect(screen.getByRole('button', { name: '再來一場' })).toBeInTheDocument();
+
+    const stored: Annotation[] = saved('annotations');
+    expect(stored.filter((a) => !a.guest)).toHaveLength(DUO.rounds);
+    expect(stored.filter((a) => a.guest).map((a) => a.name)).toEqual(Array(DUO.rounds).fill('阿華'));
+    expect(screen.getByLabelText(`已經判斷 ${DUO.rounds} 句`)).toBeInTheDocument(); // only the owner's answers
+    expect(Object.keys(saved('achievements'))).toContain('duel');
+
+    await user.click(screen.getByRole('button', { name: '回首頁' }));
+    await user.click(screen.getByRole('button', { name: '排行榜' }));
+    const board = screen.getByRole('dialog', { name: '排行榜' });
+    await user.click(within(board).getByRole('tab', { name: '標註數' }));
+    expect(within(board).getByText('阿華')).toBeInTheDocument(); // the guest still shows in the per-name ranking
+  });
+});
 
 describe('milestones', () => {
   it('congratulates on the hundredth answer, like the 2018 version, without stopping the game', async () => {

@@ -53,6 +53,9 @@ export const MODES = {
  */
 export const LIVES = { loseOn: ['miss'], healEvery: 5 } as const;
 
+/** Two players on one device take turns on the same sentences; this many per match. */
+export const DUO = { rounds: 6 } as const;
+
 /** Shared results put this many tier symbols on a line. */
 export const SHARE_SYMBOLS_PER_LINE = 10;
 

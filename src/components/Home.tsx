@@ -1,6 +1,6 @@
-import { CalendarDays, ChevronRight, Heart, Sparkles, Timer, Trophy } from 'lucide-react';
+import { CalendarDays, ChevronRight, Heart, Sparkles, Timer, Trophy, Users } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
-import { MILESTONE_EVERY, MODES } from '../config.ts';
+import { DUO, MILESTONE_EVERY, MODES } from '../config.ts';
 import { MODE_INFO, MODE_ORDER } from '../game/labels.ts';
 import { rankRuns } from '../lib/records.ts';
 import type { DailyRecord, ModeId, RunRecord, SentencePack } from '../types.ts';
@@ -28,9 +28,10 @@ interface HomeProps {
   packId: string | null;
   onPack: (packId: string | null) => void;
   onStart: (mode: ModeId) => void;
+  onDuo: () => void;
 }
 
-export function Home({ name, total, xp, runs, dailyDone, dailyShareText, packs, packId, onPack, onStart }: HomeProps) {
+export function Home({ name, total, xp, runs, dailyDone, dailyShareText, packs, packId, onPack, onStart, onDuo }: HomeProps) {
   const intoMilestone = total % MILESTONE_EVERY;
   const nextMilestone = total - intoMilestone + MILESTONE_EVERY;
 
@@ -102,6 +103,26 @@ export function Home({ name, total, xp, runs, dailyDone, dailyShareText, packs, 
           );
         })}
       </ul>
+
+      <div className="glass flex animate-rise flex-col items-start gap-4 rounded-3xl p-5 [animation-delay:420ms] sm:flex-row sm:items-center">
+        <span className="bg-mood grid size-11 shrink-0 place-items-center rounded-2xl text-white shadow-md shadow-fuchsia-500/25">
+          <Users className="size-5" aria-hidden="true" />
+        </span>
+        <div className="flex-1">
+          <h2 className="font-display text-xl font-bold">雙人對戰</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            兩個人用同一台裝置輪流撒網，先撒的人網子會藏起來，{DUO.rounds} 句後分數高的人贏。
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onDuo}
+          className="group bg-mood flex min-h-12 w-full items-center justify-center gap-1 rounded-2xl px-5 font-semibold text-white shadow-lg shadow-fuchsia-500/25 transition hover:brightness-110 sm:w-auto"
+        >
+          開始雙人對戰
+          <ChevronRight className="size-5 transition group-hover:translate-x-0.5" aria-hidden="true" />
+        </button>
+      </div>
     </section>
   );
 }
