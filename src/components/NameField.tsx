@@ -28,7 +28,7 @@ export function NameField({
         data-autofocus={autoFocus || undefined}
         className="min-h-12 rounded-2xl border border-slate-900/10 bg-white/80 px-4 text-lg outline-none focus:border-calm focus:ring-4 focus:ring-calm/20 dark:border-white/15 dark:bg-white/5"
       />
-      <p className="text-xs text-slate-500 dark:text-slate-400">最多 {NAME_MAX_LENGTH} 個字。排行榜和送出的標註都會用這個名字。</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">最多 {NAME_MAX_LENGTH} 個字，排行榜和成績卡會用這個名字。</p>
     </div>
   );
 }

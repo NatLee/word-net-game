@@ -39,7 +39,7 @@ function MiniSpectrum({ sway }: { sway: boolean }) {
 const STEPS: { title: string; body: ReactNode; art: ReactNode }[] = [
   {
     title: '第一步：取名字',
-    body: '先輸入你的名字。排行榜和送出的標註都會用這個名字，之後可以在設定裡改。',
+    body: '先輸入你的名字。排行榜和成績卡都會用這個名字，之後可以在設定裡改。',
     art: (
       <Mock>
         <div className="flex h-11 w-52 items-center rounded-xl border border-slate-900/15 bg-white px-3 text-lg dark:border-white/20 dark:bg-white/10">
