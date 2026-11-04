@@ -14,8 +14,8 @@ const ICON = { achievement: Award, rank: ChevronsUp, milestone: PartyPopper };
 const VISIBLE = 3;
 
 /**
- * Small cards for achievements, rank ups and milestones: under the header on phones, in the
- * top-right corner on wide screens, away from the game. They never take focus or block the
+ * Small cards for achievements, rank ups and milestones: under the header, or in the top-right
+ * corner on screens wide enough (1280 px) for them to sit beside the game column. They never take focus or block the
  * game (the rush clock keeps running fairly), screen readers hear them through the live region,
  * and each one leaves TOAST_MS after it appears, or when closed.
  */
@@ -24,7 +24,7 @@ export function Toaster({ toasts, onDismiss }: { toasts: readonly Toast[]; onDis
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-4 top-[calc(4.5rem+env(safe-area-inset-top))] z-50 flex flex-col items-center gap-2 lg:left-auto lg:w-80"
+      className="pointer-events-none fixed inset-x-4 top-[calc(4.5rem+env(safe-area-inset-top))] z-50 flex flex-col items-center gap-2 xl:left-auto xl:w-60"
     >
       {toasts.slice(0, VISIBLE).map((toast) => (
         <ToastCard key={toast.id} toast={toast} onDismiss={onDismiss} />
