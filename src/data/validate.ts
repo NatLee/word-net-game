@@ -6,6 +6,11 @@ export const MAX_TEXT_LENGTH = 60;
 
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/** The text with punctuation, symbols and spaces removed: two sentences that only differ in those are the same sentence. */
+export function textKey(text: string): string {
+  return text.replace(/[\s\p{P}\p{S}]/gu, '');
+}
+
 export type PackResult = { ok: true; pack: SentencePack } | { ok: false; errors: string[] };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -94,12 +99,16 @@ export function loadLibrary(files: Record<string, unknown>): SentencePack[] {
 
   const packIds = new Set<string>();
   const sentenceIds = new Set<string>();
+  const texts = new Map<string, string>();
   for (const pack of packs) {
     if (packIds.has(pack.id)) errors.push(`pack id "${pack.id}" is used by more than one file`);
     packIds.add(pack.id);
     for (const sentence of pack.sentences) {
       if (sentenceIds.has(sentence.id)) errors.push(`sentence id "${sentence.id}" appears in more than one pack`);
       sentenceIds.add(sentence.id);
+      const same = texts.get(textKey(sentence.text));
+      if (same) errors.push(`sentence "${sentence.id}" has the same text as "${same}"`);
+      else texts.set(textKey(sentence.text), sentence.id);
     }
   }
   if (packs.length === 0 && errors.length === 0) errors.push('no sentence packs found');

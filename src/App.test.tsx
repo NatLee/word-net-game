@@ -104,6 +104,18 @@ describe('a classic run', () => {
     expect(within(board).getByText(`${MODES.classic.rounds} 句`)).toBeInTheDocument();
   });
 
+  it('reads the explanation aloud with the result', async () => {
+    const noted: Sentence[] = [{ id: 'n-1', text: '真開心，又要加班了。', score: -0.6, tags: ['反諷'], note: '「真開心」是反話。', pack: 'test' }];
+    writeStored('name', '小明');
+    const user = userEvent.setup();
+    const { container } = render(<App packs={[pack('test', '測試', noted)]} now={now} />);
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    await answer(user, '3');
+    const live = [...container.querySelectorAll('[aria-live="polite"]')].find((el) => el.textContent?.includes('參考分數'));
+    expect(live).toHaveTextContent('完美！參考分數 -0.60，你猜 -0.50，得到 100 分。「真開心」是反話。');
+    expect(screen.getAllByText('「真開心」是反話。').length).toBeGreaterThan(0); // shown on screen too
+  });
+
   it('moves the net where the player taps the scale', async () => {
     setup();
     fireEvent.click(screen.getByRole('button', { name: /開始經典/ }));
