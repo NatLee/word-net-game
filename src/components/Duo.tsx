@@ -1,6 +1,7 @@
 import { ArrowLeft, Crown, EyeOff, House, RotateCcw } from 'lucide-react';
 import { useEffect, useReducer, useRef } from 'react';
 import { createDuo, duoRounds, duoSentence, matchWinner, reduceDuo, roundWinner, type DuoSession } from '../game/duo.ts';
+import { feedbackFor } from '../game/feedback.ts';
 import { TIER_INFO } from '../game/labels.ts';
 import { formatScore, TIERS } from '../game/scoring.ts';
 import { duoShareText } from '../game/share.ts';
@@ -63,6 +64,7 @@ export function Duo({ names, queue, url, onRound, onFinish, onRematch, onHome }:
 
   const resultA = revealed ? a.results.at(-1) : undefined;
   const resultB = revealed ? b.results.at(-1) : undefined;
+  const feedback = [resultA, resultB].map((result, i) => result ? feedbackFor(sentence, session.players[i].guess ?? 0, session.round + i) : undefined);
   const winner = resultA && resultB ? roundWinner(resultA, resultB) : null;
   const best = resultA && resultB ? TIERS[Math.min(TIERS.indexOf(resultA.tier), TIERS.indexOf(resultB.tier))] : null;
 
@@ -149,6 +151,16 @@ export function Duo({ names, queue, url, onRound, onFinish, onRematch, onHome }:
             ))}
           </div>
           <p className="mt-3 text-center text-sm text-slate-600 dark:text-slate-300">參考分數 {formatScore(sentence.score)}</p>
+          {feedback.some(Boolean) && (
+            <ul className="mt-3 space-y-3 text-sm" aria-label="情緒判讀提示">
+              {feedback.map((item, i) => item && (
+                <li key={i} className="rounded-2xl bg-slate-900/5 p-3 dark:bg-white/5">
+                  <p className="font-semibold"><span className={PLAYER[i].text}>{session.players[i].name}</span>：{item.quip}</p>
+                  <p className="mt-1 text-slate-600 dark:text-slate-300">{item.hint}</p>
+                </li>
+              ))}
+            </ul>
+          )}
           {sentence.note && <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-300">{sentence.note}</p>}
           <Button ref={next} variant="primary" onClick={() => dispatch({ type: 'next' })} className="mt-4 w-full">
             {session.round + 1 >= duoRounds(session) ? '看結果' : '下一句'}
@@ -162,7 +174,11 @@ export function Duo({ names, queue, url, onRound, onFinish, onRematch, onHome }:
         </div>
       )}
       <div aria-live="polite" className="sr-only">
-        {revealed && resultA && resultB && `參考分數 ${formatScore(sentence.score)}。${a.name} ${resultA.points} 分，${b.name} ${resultB.points} 分。${sentence.note ?? ''}`}
+        {revealed && resultA && resultB && [
+          `參考分數 ${formatScore(sentence.score)}。`,
+          ...session.players.map((player, i) => `${player.name} ${player.results.at(-1)?.points} 分。${feedback[i]?.quip ?? ''}${feedback[i]?.hint ?? ''}`),
+          sentence.note,
+        ].filter(Boolean).join('')}
       </div>
     </section>
   );
