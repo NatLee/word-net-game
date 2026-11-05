@@ -1,3 +1,4 @@
+import { testFeedback } from '../test/fixtures.ts';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -16,7 +17,7 @@ vi.mock('../lib/card-image.ts', () => ({
   canShareImages: () => false,
 }));
 
-const sentences: Sentence[] = [-0.8, 0, 0.6].map((score, i) => ({ id: `s-${i}`, text: `句子 ${i}`, score, tags: [], pack: 'p' }));
+const sentences: Sentence[] = [-0.8, 0, 0.6].map((score, i) => ({ id: `s-${i}`, text: `句子 ${i}`, score, tags: [], pack: 'p', feedback: testFeedback }));
 
 /** A finished classic run with a perfect, a near and a miss. */
 function finishedRun() {

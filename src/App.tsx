@@ -29,9 +29,9 @@ import type { Annotation, DailyRecord, ModeId, RunRecord, Sentence, SentencePack
 
 type Screen =
   | { kind: 'home' }
-  | { kind: 'play'; mode: ModeId; queue: Sentence[]; run: number; xpAtStart: number }
+  | { kind: 'play'; mode: ModeId; queue: Sentence[]; run: number; xpAtStart: number; feedbackVisit: number }
   | { kind: 'summary'; session: Session; best: boolean; gains: Gains }
-  | { kind: 'duo'; names: [string, string]; queue: Sentence[]; run: number };
+  | { kind: 'duo'; names: [string, string]; queue: Sentence[]; run: number; feedbackVisit: number };
 
 const parseBool = (raw: unknown) => (typeof raw === 'boolean' ? raw : null);
 
@@ -51,6 +51,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
   const [runs, setRuns] = useStored<RunRecord[]>('runs', parseRuns, []);
   const [daily, setDaily] = useStored<Record<string, DailyRecord>>('daily', parseDaily, {});
   const [unlocked, setUnlocked] = useStored<Record<string, string>>('achievements', parseUnlocked, {});
+  const [feedbackVisit, setFeedbackVisit] = useStored<number>('feedback-visit', (raw) => typeof raw === 'number' && Number.isSafeInteger(raw) && raw >= 0 ? raw : null, 0);
   // The chosen pack; null (or a pack that no longer exists) means all packs.
   const [packId, setPackId] = useStored<string | null>('pack', (raw) => (packs.some((p) => p.id === raw) ? (raw as string) : null), null);
   const [screen, setScreen] = useState<Screen>({ kind: 'home' });
@@ -74,8 +75,8 @@ export function App({ packs, now = () => new Date() }: AppProps) {
   const xp = xpOf(own);
 
   const notify = (toast: Omit<Toast, 'id'>) => {
-    toastCounter.current += 1;
-    setToasts((list) => [...list, { ...toast, id: toastCounter.current }]);
+    const id = ++toastCounter.current;
+    setToasts((list) => [...list, { ...toast, id }]);
   };
   const celebrate = (seed: number) => {
     if (!reducedMotion) setConfetti(seed);
@@ -103,14 +104,16 @@ export function App({ packs, now = () => new Date() }: AppProps) {
     runUnlocks.current = [];
     // Date-seeded modes always deal from every pack, so everyone gets the same sentences that day.
     const pool = MODES[mode].seededByDate ? everything : chosenPool();
-    setScreen({ kind: 'play', mode, queue: dealSentences(mode, pool, today), run: runCounter.current, xpAtStart: xp });
+    setFeedbackVisit(feedbackVisit + 1);
+    setScreen({ kind: 'play', mode, queue: dealSentences(mode, pool, today), run: runCounter.current, xpAtStart: xp, feedbackVisit: feedbackVisit + 1 });
   };
 
   const startDuo = (names: [string, string]) => {
     setDuoSetup(false);
     runCounter.current += 1;
     runUnlocks.current = [];
-    setScreen({ kind: 'duo', names, queue: shuffle(chosenPool()).slice(0, DUO.rounds), run: runCounter.current });
+    setFeedbackVisit(feedbackVisit + 1);
+    setScreen({ kind: 'duo', names, queue: shuffle(chosenPool()).slice(0, DUO.rounds), run: runCounter.current, feedbackVisit: feedbackVisit + 1 });
   };
 
   /**
@@ -235,6 +238,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
             onPack={setPackId}
             onStart={start}
             onDuo={() => setDuoSetup(true)}
+            onChallenges={() => setPanel('profile')}
           />
         )}
         {screen.kind === 'play' && (
@@ -243,6 +247,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
             mode={screen.mode}
             queue={screen.queue}
             reducedMotion={reducedMotion}
+            feedbackVisit={screen.feedbackVisit}
             onAnswer={onAnswer}
             onFinish={finish}
             onQuit={quit}
@@ -252,6 +257,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
           <Duo
             key={screen.run}
             names={screen.names}
+            feedbackVisit={screen.feedbackVisit}
             queue={screen.queue}
             url={gameUrl()}
             onRound={onDuoRound}
@@ -299,7 +305,7 @@ export function App({ packs, now = () => new Date() }: AppProps) {
       {name && panel === 'tutorial' && <Tutorial onClose={() => setPanel(null)} />}
       {name && panel === 'leaderboard' && <Leaderboard runs={runs} annotations={annotations} onClose={() => setPanel(null)} />}
       {name && panel === 'profile' && (
-        <Profile name={name} xp={xp} answers={total} perfects={perfects} bestStreak={bestStreak} unlocked={unlocked} onClose={() => setPanel(null)} />
+        <Profile name={name} xp={xp} answers={total} perfects={perfects} bestStreak={bestStreak} unlocked={unlocked} context={{ answers: own, sentences: byId, packIds, finished: false, daily }} onClose={() => setPanel(null)} />
       )}
       {name && panel === 'settings' && (
         <Settings

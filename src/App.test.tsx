@@ -1,3 +1,4 @@
+import { testFeedback } from './test/fixtures.ts';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,7 +10,7 @@ import { media } from './test/setup.ts';
 import type { Annotation, Sentence, SentencePack } from './types.ts';
 
 // Every sentence scores +0.5, so pressing 7 (= +0.5) is always perfect, whatever order they are dealt in.
-const pool: Sentence[] = Array.from({ length: 12 }, (_, i) => ({ id: `t-${i}`, text: `測試句子 ${i}`, score: 0.5, tags: [], pack: 'test' }));
+const pool: Sentence[] = Array.from({ length: 12 }, (_, i) => ({ id: `t-${i}`, text: `測試句子 ${i}`, score: 0.5, tags: [], pack: 'test', feedback: testFeedback }));
 const pack = (id: string, title: string, sentences: Sentence[]): SentencePack => ({ id, title, language: 'zh-TW', source: 'test', license: 'CC0-1.0', sentences });
 const packs = [pack('test', '測試', pool)];
 const now = () => new Date(2026, 10, 4, 9, 30);
@@ -106,23 +107,25 @@ describe('a classic run', () => {
   });
 
   it('reads the explanation aloud with the result', async () => {
-    const noted: Sentence[] = [{ id: 'n-1', text: '真開心，又要加班了。', score: -0.6, tags: ['反諷'], note: '「真開心」是反話。', pack: 'test' }];
+    const noted: Sentence[] = [{ id: 'n-1', text: '真開心，又要加班了。', score: -0.6, tags: ['反諷'], note: '「真開心」是反話。', pack: 'test', feedback: testFeedback }];
     writeStored('name', '小明');
     const user = userEvent.setup();
     const { container } = render(<App packs={[pack('test', '測試', noted)]} now={now} />);
     await user.click(screen.getByRole('button', { name: /開始經典/ }));
     await answer(user, '3');
     const live = [...container.querySelectorAll('[aria-live="polite"]')].find((el) => el.textContent?.includes('參考分數'));
-    expect(live).toHaveTextContent('完美！參考分數 -0.60，你猜 -0.50，得到 100 分。「真開心」是反話。');
+    expect(live).toHaveTextContent('完美！參考分數 -0.60，你猜 -0.50，得到 100 分。');
+    expect(live).toHaveTextContent(testFeedback.hit[0]);
+    expect(live).toHaveTextContent('「真開心」是反話。');
     expect(screen.getAllByText('「真開心」是反話。').length).toBeGreaterThan(0); // shown on screen too
   });
 
   it('reveals a situational joke, correction and sentence note together, including the live announcement', async () => {
-    const source: Sentence = { id: 'ironic', text: '太好了，又得加班。', score: -0.8, tags: ['反諷'], note: '「太好了」是反話。', pack: 'test' };
+    const source: Sentence = { id: 'ironic', text: '太好了，又得加班。', score: -0.8, tags: ['反諷'], note: '「太好了」是反話。', pack: 'test', feedback: testFeedback };
     writeStored('name', '小明');
     const user = userEvent.setup();
     const { container } = render(<App packs={[pack('test', '測試', [source])]} now={now} />);
-    const feedback = feedbackFor(source, 1, 0)!;
+    const feedback = feedbackFor(source, 1, 0, 1);
     await user.click(screen.getByRole('button', { name: /開始經典/ }));
     expect(screen.queryByText(feedback.quip)).not.toBeInTheDocument();
     await answer(user, '9');
@@ -165,7 +168,7 @@ describe('a classic run', () => {
 
 describe('sentence packs', () => {
   it('deal only from the chosen pack, remember the choice, and leave the daily challenge on every pack', async () => {
-    const sad = Array.from({ length: 3 }, (_, i) => ({ id: `sad-${i}`, text: `難過的句子 ${i}`, score: -0.5, tags: [], pack: 'sad' }));
+    const sad = Array.from({ length: 3 }, (_, i) => ({ id: `sad-${i}`, text: `難過的句子 ${i}`, score: -0.5, tags: [], pack: 'sad', feedback: testFeedback }));
     writeStored('name', '小明');
     const user = userEvent.setup();
     render(<App packs={[pack('test', '測試', pool), pack('sad', '難過', sad)]} now={now} />);
@@ -257,7 +260,7 @@ const old = (over: Partial<Annotation> = {}): Annotation => ({ sentenceId: 'x', 
 
 describe('duo', () => {
   it('waits for both guesses, then gives each player their own correction', async () => {
-    const source: Sentence = { id: 'neutral', text: '今天照常開門。', score: 0, tags: [], pack: 'test' };
+    const source: Sentence = { id: 'neutral', text: '今天照常開門。', score: 0, tags: [], pack: 'test', feedback: testFeedback };
     writeStored('name', '小明');
     const user = userEvent.setup();
     const { container } = render(<App packs={[pack('test', '測試', [source])]} now={now} />);
@@ -274,7 +277,7 @@ describe('duo', () => {
     expect(hints[1]).toHaveTextContent('參考偏中立，你猜成悲觀；往開心那側靠一些。');
     const live = [...container.querySelectorAll('[aria-live="polite"]')].find((el) => el.textContent?.includes('參考分數'));
     for (let i = 0; i < 2; i++) {
-      const feedback = feedbackFor(source, i === 0 ? 1 : -1, i)!;
+      const feedback = feedbackFor(source, i === 0 ? 1 : -1, 0, 1 + i);
       expect(live).toHaveTextContent(feedback.quip);
       expect(live).toHaveTextContent(feedback.hint);
     }
@@ -293,7 +296,7 @@ describe('duo', () => {
       expect(screen.getByText(/輪到/)).toHaveTextContent('輪到 阿華 撒網（小明 的網子先藏起來了）');
       expect(screen.getByRole('slider')).toHaveAttribute('aria-valuenow', '0'); // the second net starts in the middle
       await answer(user, '5'); // 阿華: 0.5 off
-      expect(screen.getByText(/這句/)).toHaveTextContent('這句 小明 贏！');
+      expect(screen.getByText(/這句.*贏！/)).toHaveTextContent('這句 小明 贏！');
       await user.keyboard('{Enter}');
     }
     expect(screen.getByRole('heading', { name: '雙人對戰' })).toBeInTheDocument();
@@ -330,6 +333,57 @@ describe('milestones', () => {
 });
 
 describe('ranks and achievements', () => {
+  it('dismisses only one notification when several achievements unlock together', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    await answer(user, '7');
+    const status = within(screen.getByRole('status'));
+    expect(status.getAllByRole('button', { name: '關閉通知' })).toHaveLength(3);
+    await user.click(status.getAllByRole('button', { name: '關閉通知' })[0]);
+    expect(status.getAllByRole('button', { name: '關閉通知' })).toHaveLength(2);
+  });
+
+  it('opens challenges from home and shows distinct progress and persistent unlocks', async () => {
+    const work = Array.from({ length: 20 }, (_, i) => ({ ...pool[i % pool.length], id: `work-${i}`, pack: 'work' }));
+    const prior = work.filter((s) => s.id !== 'work-1').map((s) => old({ sentenceId: s.id, text: s.text, reference: 0.5, guess: 0.5 }));
+    writeStored('name', '小明');
+    writeStored('annotations', [...prior, { ...old({ sentenceId: 'work-1' }), guest: true }]);
+    vi.spyOn(Math, 'random').mockReturnValue(0); // Fisher–Yates starts this queue at work-1.
+    const user = userEvent.setup();
+    const { unmount } = render(<App packs={[pack('work', '職場', work)]} now={now} />);
+    await user.click(screen.getByRole('button', { name: /成就挑戰/ }));
+    expect(screen.getByRole('progressbar', { name: '辦公室翻譯官進度' })).toHaveAttribute('aria-valuenow', '19');
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    await answer(user, '7');
+    expect(saved('achievements')).toHaveProperty('office-interpreter');
+    unmount();
+    render(<App packs={[pack('work', '職場', work)]} now={now} />);
+    await user.click(screen.getByRole('button', { name: /成就挑戰/ }));
+    const progress = screen.getByRole('progressbar', { name: '辦公室翻譯官進度' });
+    expect(progress).toHaveAttribute('aria-valuenow', '20');
+    expect(progress).toHaveAttribute('aria-valuemax', '20');
+    expect(screen.getByText('辦公室翻譯官').closest('li')).toHaveTextContent('（已解鎖）');
+  });
+
+  it('changes the same sentence response across remounts while keeping the current reveal stable', async () => {
+    const source = pool[0];
+    writeStored('name', '小明');
+    const user = userEvent.setup();
+    const props = { packs: [pack('test', '測試', [source])], now };
+    const { unmount } = render(<App {...props} />);
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    await answer(user, '7');
+    expect(screen.getByText(feedbackFor(source, 0.5, 0, 1).quip)).toBeVisible();
+    expect(saved('feedback-visit')).toBe(1);
+    unmount();
+    render(<App {...props} />);
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    await answer(user, '7');
+    expect(screen.getByText(feedbackFor(source, 0.5, 0, 2).quip)).toBeVisible();
+    expect(screen.queryByText(feedbackFor(source, 0.5, 0, 1).quip)).not.toBeInTheDocument();
+  });
+
   it('unlocks achievements as they happen and lists them in the profile', async () => {
     const user = setup();
     await user.click(screen.getByRole('button', { name: /開始經典/ }));

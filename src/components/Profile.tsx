@@ -1,5 +1,5 @@
 import { Award, Lock } from 'lucide-react';
-import { ACHIEVEMENTS } from '../game/achievements.ts';
+import { ACHIEVEMENTS, type AchievementContext } from '../game/achievements.ts';
 import { rankFor } from '../game/progress.ts';
 import { Modal } from './Modal.tsx';
 
@@ -13,6 +13,7 @@ interface ProfileProps {
   bestStreak: number;
   /** Achievement id → ISO time it was unlocked. */
   unlocked: Readonly<Record<string, string>>;
+  context: AchievementContext;
   onClose: () => void;
 }
 
@@ -43,7 +44,7 @@ export function RankBar({ xp, className = '' }: { xp: number; className?: string
   );
 }
 
-export function Profile({ name, xp, answers, perfects, bestStreak, unlocked, onClose }: ProfileProps) {
+export function Profile({ name, xp, answers, perfects, bestStreak, unlocked, context, onClose }: ProfileProps) {
   const count = ACHIEVEMENTS.filter((a) => unlocked[a.id]).length;
   const stats = [
     { label: '判斷句數', value: answers },
@@ -67,9 +68,11 @@ export function Profile({ name, xp, answers, perfects, bestStreak, unlocked, onC
           <h3 id="achievements-title" className="mb-3 font-semibold">
             成就 <span className="font-display text-slate-500 tabular-nums dark:text-slate-400">{count} / {ACHIEVEMENTS.length}</span>
           </h3>
+          <p className="mb-3 text-sm text-slate-600 dark:text-slate-300">收集不同句子、讀懂中立、猜反後扳回來。重複作答同一句不會增加收集進度；雙人訪客的答案也不會計入。</p>
           <ul className="grid gap-2 sm:grid-cols-2">
             {ACHIEVEMENTS.map((a) => {
               const at = unlocked[a.id];
+              const progress = a.progress?.(context);
               return (
                 <li key={a.id} className={`flex items-start gap-3 rounded-2xl p-3 ${at ? 'bg-slate-900/[0.04] dark:bg-white/[0.06]' : 'opacity-60'}`}>
                   <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${at ? 'bg-mood text-white' : 'bg-slate-900/10 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
@@ -81,6 +84,14 @@ export function Profile({ name, xp, answers, perfects, bestStreak, unlocked, onC
                       <span className="sr-only">{at ? '（已解鎖）' : '（還沒解鎖）'}</span>
                     </p>
                     <p className="text-sm text-slate-600 dark:text-slate-300">{a.description}</p>
+                    {progress && (
+                      <div className="mt-2">
+                        <p className="text-xs tabular-nums text-slate-500 dark:text-slate-400">{at ? progress.target : progress.current} / {progress.target}</p>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-900/10 dark:bg-white/10" role="progressbar" aria-label={`${a.title}進度`} aria-valuemin={0} aria-valuemax={progress.target} aria-valuenow={at ? progress.target : progress.current}>
+                          <div className="bg-mood h-full rounded-full" style={{ width: `${((at ? progress.target : progress.current) / progress.target) * 100}%` }} />
+                        </div>
+                      </div>
+                    )}
                     {at && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{dateFormat.format(new Date(at))} 解鎖</p>}
                   </div>
                 </li>

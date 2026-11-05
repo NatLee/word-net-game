@@ -16,6 +16,7 @@ interface PlayProps {
   mode: ModeId;
   queue: readonly Sentence[];
   reducedMotion: boolean;
+  feedbackVisit: number;
   /** Called once per locked-in guess. */
   onAnswer: (session: Session) => void;
   onFinish: (session: Session) => void;
@@ -23,11 +24,11 @@ interface PlayProps {
   onQuit: (session: Session) => void;
 }
 
-export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }: PlayProps) {
+export function Play({ mode, queue, reducedMotion, feedbackVisit, onAnswer, onFinish, onQuit }: PlayProps) {
   const [session, dispatch] = useReducer(reduce, undefined, () => createSession(mode, queue));
   const sentence = currentSentence(session);
   const result = session.phase === 'revealed' ? lastResult(session) : undefined;
-  const feedback = result ? feedbackFor(result.sentence, result.guess, session.round) : undefined;
+  const feedback = result ? feedbackFor(result.sentence, result.guess, session.round, feedbackVisit) : undefined;
   const timed = session.timeLeftMs !== null;
 
   // Report each answer and the end of the run to the app (records, sounds, the summary screen).
@@ -215,7 +216,7 @@ function Result({
   onNext,
 }: {
   result: RoundResult;
-  feedback: ReturnType<typeof feedbackFor>;
+  feedback: ReturnType<typeof feedbackFor> | undefined;
   last: boolean;
   timed: boolean;
   nextRef: Ref<HTMLButtonElement>;

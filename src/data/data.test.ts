@@ -1,3 +1,4 @@
+import { testFeedback } from '../test/fixtures.ts';
 import { describe, expect, it } from 'vitest';
 import { MODES, SCORING } from '../config.ts';
 import { packs, sentences } from './index.ts';
@@ -9,10 +10,19 @@ const good = {
   language: 'zh-TW',
   source: 'test',
   license: 'CC0-1.0',
-  sentences: [{ id: 'demo-1', text: '好開心', score: 0.8, tags: ['日常'] }],
+  sentences: [{ id: 'demo-1', text: '好開心', score: 0.8, tags: ['日常'], feedback: testFeedback }],
 };
 
 describe('the bundled packs', () => {
+  it('provides five authored feedback branches for every sentence', () => {
+    expect(sentences.length).toBeGreaterThanOrEqual(600);
+    for (const sentence of sentences) {
+      for (const key of ['hit', 'edge', 'higher', 'lower', 'neutral'] as const) {
+        expect(sentence.feedback[key].length, `${sentence.id}: ${key}`).toBeGreaterThan(0);
+        for (const line of sentence.feedback[key]) expect(line.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
   it('load and validate', () => {
     expect(packs.length).toBeGreaterThan(0);
     for (const pack of packs) expect(pack.source).toMatch(/原創/);
@@ -55,7 +65,7 @@ describe('validatePack', () => {
   it('accepts a well-formed pack and tags each sentence with its pack', () => {
     const result = validatePack(good, 'demo.json');
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.pack.sentences[0]).toEqual({ id: 'demo-1', text: '好開心', score: 0.8, tags: ['日常'], pack: 'demo' });
+    if (result.ok) expect(result.pack.sentences[0]).toEqual({ id: 'demo-1', text: '好開心', score: 0.8, tags: ['日常'], feedback: testFeedback, pack: 'demo' });
   });
 
   it('reports every problem with its location', () => {
@@ -64,9 +74,9 @@ describe('validatePack', () => {
         ...good,
         title: '',
         sentences: [
-          { id: 'Bad Id', text: 'x', score: 0 },
-          { id: 'a', text: '', score: 2 },
-          { id: 'a', text: 'y'.repeat(MAX_TEXT_LENGTH + 1), score: 'high', tags: [1], note: '' },
+          { id: 'Bad Id', text: 'x', score: 0, feedback: testFeedback },
+          { id: 'a', text: '', score: 2, feedback: testFeedback },
+          { id: 'a', text: 'y'.repeat(MAX_TEXT_LENGTH + 1), score: 'high', tags: [1], note: '', feedback: testFeedback },
         ],
       },
       'bad.json',
@@ -91,6 +101,18 @@ describe('validatePack', () => {
     expect(validatePack({ ...good, license: undefined }, 'x.json')).toEqual({ ok: false, errors: ['x.json license: must be a non-empty string'] });
   });
 
+  it('rejects missing, blank and repeated feedback variants with their locations', () => {
+    const withFeedback = (feedback: unknown) => ({ ...good, sentences: [{ ...good.sentences[0], feedback }] });
+    expect(validatePack(withFeedback(undefined), 'x.json')).toEqual({ ok: false, errors: ['x.json sentences[0].feedback: must contain sentence-specific feedback'] });
+    for (const key of ['hit', 'edge', 'higher', 'lower', 'neutral']) {
+      for (const invalid of [undefined, [], [''], ['a', ' a！']]) {
+        const result = validatePack(withFeedback({ ...testFeedback, [key]: invalid }), 'x.json');
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.errors[0]).toContain(`feedback.${key}`);
+      }
+    }
+  });
+
   it('rejects files that are not packs', () => {
     expect(validatePack([], 'x.json')).toEqual({ ok: false, errors: ['x.json: must be a JSON object'] });
     expect(validatePack({ ...good, sentences: [] }, 'x.json').ok).toBe(false);
@@ -107,7 +129,7 @@ describe('loadLibrary', () => {
   });
 
   it('rejects the same sentence twice, even with different punctuation', () => {
-    const twin = { ...good, id: 'twin', sentences: [{ id: 'twin-1', text: '好 開心！', score: 0.5, tags: [] }] };
+    const twin = { ...good, id: 'twin', sentences: [{ id: 'twin-1', text: '好 開心！', score: 0.5, tags: [], feedback: testFeedback }] };
     expect(() => loadLibrary({ 'a.json': good, 'b.json': twin })).toThrow(/sentence "twin-1" has the same text as "demo-1"/);
   });
 });

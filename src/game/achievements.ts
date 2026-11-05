@@ -1,7 +1,7 @@
 import { MILESTONE_EVERY, MODES } from '../config.ts';
 import type { Annotation, DailyRecord, Sentence } from '../types.ts';
 import { localDateKey } from './random.ts';
-import { distance, keepsCombo, tierFor } from './scoring.ts';
+import { distance, keepsCombo, moodOf, tierFor } from './scoring.ts';
 import type { Session } from './session.ts';
 
 /** What an achievement can look at. Checked after every answer and once more when a run ends. */
@@ -26,6 +26,7 @@ export interface Achievement {
   title: string;
   description: string;
   check: (ctx: AchievementContext) => boolean;
+  progress?: (ctx: AchievementContext) => { current: number; target: number };
 }
 
 const tierOf = (a: Annotation) => tierFor(distance(a.guess, a.reference));
@@ -40,6 +41,46 @@ const TAG_GOALS = [
   { id: 'punchline-detector', title: '笑點偵測器', tag: '幽默', times: 10 },
 ] as const;
 const isPerfect = (a: Annotation) => tierOf(a) === 'perfect';
+
+/** Distinct sentences prevent replaying one easy prompt to complete a collection challenge. */
+function distinctCount(ctx: AchievementContext, matches: (answer: Annotation) => boolean): number {
+  return new Set(ctx.answers.filter((a) => !a.guest && matches(a)).map((a) => a.sentenceId)).size;
+}
+
+function challenge(id: string, title: string, description: string, target: number | ((ctx: AchievementContext) => number), count: (ctx: AchievementContext) => number): Achievement {
+  const progress = (ctx: AchievementContext) => {
+    const goal = typeof target === 'number' ? target : Math.max(1, target(ctx));
+    return { current: Math.min(goal, count(ctx)), target: goal };
+  };
+  return { id, title, description, progress, check: (ctx) => { const p = progress(ctx); return p.current >= p.target; } };
+}
+
+function recoveries(ctx: AchievementContext, from: (answer: Annotation) => boolean, to: (answer: Annotation) => boolean): number {
+  const own = ctx.answers.filter((a) => !a.guest);
+  return own.filter((answer, i) => i > 0 && from(own[i - 1]) && to(answer)).length;
+}
+
+const CHALLENGES: readonly Achievement[] = [
+  challenge('office-interpreter', '辦公室翻譯官', '在 20 句不同的「職場」題目拿到「很接近」以上。', 20,
+    (c) => distinctCount(c, (a) => c.sentences.get(a.sentenceId)?.pack === 'work' && keepsCombo(tierOf(a)))),
+  challenge('subtext-specialist', '弦外之音鑑定師', '在 20 句不同的「話中有話」題目拿到「很接近」以上。', 20,
+    (c) => distinctCount(c, (a) => c.sentences.get(a.sentenceId)?.pack === 'twists' && keepsCombo(tierOf(a)))),
+  challenge('neutral-reader', '白開水品鑑師', '在 12 句不同的中立情緒題目拿到「完美」。', 12,
+    (c) => distinctCount(c, (a) => moodOf(a.reference) === 'neutral' && isPerfect(a))),
+  challenge('exact-reader', '一字不差的默契', '在 10 句不同的題目猜中完全相同的參考分數。', 10,
+    (c) => distinctCount(c, (a) => distance(a.guess, a.reference) === 0)),
+  challenge('sentence-collector', '人間觀察筆記', '累計作答 120 句不同的題目。', 120, (c) => distinctCount(c, () => true)),
+  challenge('sun-and-rain', '晴雨都接得住', '分別在 10 句不同的樂觀題、10 句不同的悲觀題拿到「完美」。', 20,
+    (c) => (['positive', 'negative'] as const).reduce((sum, mood) => sum + Math.min(10, distinctCount(c, (a) => moodOf(a.reference) === mood && isPerfect(a))), 0)),
+  challenge('comeback-reader', '反向導航已校正', '猜反而「失手」後，下一次作答立刻拿到「完美」。', 1,
+    (c) => recoveries(c, (a) => tierOf(a) === 'miss' && moodOf(a.reference) !== 'neutral' && moodOf(a.guess) !== 'neutral' && moodOf(a.reference) !== moodOf(a.guess), isPerfect)),
+  challenge('edge-recovery', '擦邊救援隊', '完成 5 次「差一點」後，下一次作答回到「很接近」以上。', 5,
+    (c) => recoveries(c, (a) => tierOf(a) === 'near', (a) => keepsCombo(tierOf(a)))),
+  challenge('polite-decoder', '客套話拆封員', '在 15 句不同、標著「話中有話」或「客套」的題目拿到「完美」。', 15,
+    (c) => distinctCount(c, (a) => isPerfect(a) && (c.sentences.get(a.sentenceId)?.tags.some((tag) => tag === '話中有話' || tag === '客套') ?? false))),
+  challenge('all-round-reader', '八面玲瓏', '每個題庫各在 5 句不同的題目拿到「很接近」以上。', (c) => c.packIds.length * 5,
+    (c) => c.packIds.reduce((sum, pack) => sum + Math.min(5, distinctCount(c, (a) => c.sentences.get(a.sentenceId)?.pack === pack && keepsCombo(tierOf(a)))), 0)),
+];
 
 /** The longest run of consecutive days in a set of YYYY-MM-DD keys. */
 export function longestDayStreak(days: readonly string[]): number {
@@ -146,6 +187,7 @@ function defineAchievements(): Achievement[] {
       },
     },
     { id: 'duel', title: '雙人對決', description: '和朋友在同一台裝置上打完一場雙人對戰。', check: (c) => c.duo === true },
+    ...CHALLENGES,
   ];
 }
 
@@ -153,5 +195,6 @@ export const ACHIEVEMENTS: readonly Achievement[] = defineAchievements();
 
 /** Ids of every achievement the context satisfies (unlocked or not). */
 export function satisfied(ctx: AchievementContext): string[] {
-  return ACHIEVEMENTS.filter((a) => a.check(ctx)).map((a) => a.id);
+  const own = { ...ctx, answers: ctx.answers.filter((a) => !a.guest) };
+  return ACHIEVEMENTS.filter((a) => a.check(own)).map((a) => a.id);
 }

@@ -20,6 +20,7 @@ const PLAYER = [
 interface DuoProps {
   names: [string, string];
   queue: readonly Sentence[];
+  feedbackVisit: number;
   url: string;
   /** Called once per revealed round, with both answers in the session. */
   onRound: (session: DuoSession) => void;
@@ -33,7 +34,7 @@ interface DuoProps {
  * Two players, one device. The first player casts and the net hides; the second casts on the
  * same sentence; then both nets and the reference are revealed together.
  */
-export function Duo({ names, queue, url, onRound, onFinish, onRematch, onHome }: DuoProps) {
+export function Duo({ names, queue, feedbackVisit, url, onRound, onFinish, onRematch, onHome }: DuoProps) {
   const [session, dispatch] = useReducer(reduceDuo, undefined, () => createDuo(names, queue));
   const sentence = duoSentence(session);
   const [a, b] = session.players;
@@ -64,7 +65,7 @@ export function Duo({ names, queue, url, onRound, onFinish, onRematch, onHome }:
 
   const resultA = revealed ? a.results.at(-1) : undefined;
   const resultB = revealed ? b.results.at(-1) : undefined;
-  const feedback = [resultA, resultB].map((result, i) => result ? feedbackFor(sentence, session.players[i].guess ?? 0, session.round + i) : undefined);
+  const feedback = [resultA, resultB].map((result, i) => result ? feedbackFor(sentence, session.players[i].guess ?? 0, session.round, feedbackVisit + i) : undefined);
   const winner = resultA && resultB ? roundWinner(resultA, resultB) : null;
   const best = resultA && resultB ? TIERS[Math.min(TIERS.indexOf(resultA.tier), TIERS.indexOf(resultB.tier))] : null;
 

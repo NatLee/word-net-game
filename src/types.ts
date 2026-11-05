@@ -10,6 +10,9 @@ export type Tier = 'perfect' | 'close' | 'near' | 'miss';
 
 export type ColorMode = 'system' | 'light' | 'dark';
 
+/** Authored for this sentence, with alternate takes where useful. */
+export type SentenceFeedback = Record<'hit' | 'edge' | 'higher' | 'lower' | 'neutral', readonly string[]>;
+
 /** One sentence to judge, with the reference score it is compared against. */
 export interface Sentence {
   /** Unique across all packs; records and the daily challenge refer to it. */
@@ -20,6 +23,7 @@ export interface Sentence {
   tags: readonly string[];
   /** Shown after the reveal, e.g. to explain sarcasm. */
   note?: string;
+  feedback: SentenceFeedback;
   /** Id of the pack it came from. */
   pack: string;
 }

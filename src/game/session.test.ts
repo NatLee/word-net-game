@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { testFeedback } from '../test/fixtures.ts';
 import { describe, expect, it } from 'vitest';
 import { LIVES, MODES } from '../config.ts';
 import type { Sentence } from '../types.ts';
@@ -10,7 +11,7 @@ const pool: Sentence[] = Array.from({ length: 30 }, (_, i) => ({
   text: `句子 ${i}`,
   score: (i % 5) / 2 - 1, // -1, -0.5, 0, 0.5, 1
   tags: [],
-  pack: 'test',
+  pack: 'test', feedback: testFeedback,
 }));
 
 const run = (session: Session, ...actions: Action[]) => actions.reduce(reduce, session);

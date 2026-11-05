@@ -68,6 +68,14 @@ export function moodLabel(value: number): string {
   return (MOOD_BANDS.find((band) => value <= band.upTo) ?? MOOD_BANDS[MOOD_BANDS.length - 1]).label;
 }
 
+export type Mood = 'positive' | 'neutral' | 'negative';
+
+/** Broad mood groups, using the same neutral boundaries as the spectrum. */
+export function moodOf(value: number): Mood {
+  if (value <= MOOD_BANDS[1].upTo) return 'negative';
+  return value <= MOOD_BANDS[2].upTo ? 'neutral' : 'positive';
+}
+
 /** A scale value with its sign, e.g. "+0.35", "-1.00", "0.00". */
 export function formatScore(value: number): string {
   const text = Math.abs(value).toFixed(SCALE_DECIMALS);
