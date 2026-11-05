@@ -1,11 +1,12 @@
 // @vitest-environment node
+import { testFeedback } from '../test/fixtures.ts';
 import { describe, expect, it } from 'vitest';
 import { DUO } from '../config.ts';
 import type { Sentence } from '../types.ts';
 import { createDuo, matchWinner, reduceDuo, type DuoAction, type DuoSession } from './duo.ts';
 import { duoShareText } from './share.ts';
 
-const queue: Sentence[] = Array.from({ length: 10 }, (_, i) => ({ id: `s-${i}`, text: `句子 ${i}`, score: 0.5, tags: [], pack: 'p' }));
+const queue: Sentence[] = Array.from({ length: 10 }, (_, i) => ({ id: `s-${i}`, text: `句子 ${i}`, score: 0.5, tags: [], pack: 'p', feedback: testFeedback }));
 const run = (s: DuoSession, ...actions: DuoAction[]) => actions.reduce(reduceDuo, s);
 /** One round: A puts the net at `a`, B at `b`. */
 const round = (a: number, b: number): DuoAction[] => [{ type: 'move', value: a }, { type: 'lock' }, { type: 'move', value: b }, { type: 'lock' }];

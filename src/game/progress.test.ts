@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { testFeedback } from '../test/fixtures.ts';
 import { describe, expect, it } from 'vitest';
 import { MILESTONE_EVERY, MODES, RANKS } from '../config.ts';
 import type { Annotation, Sentence } from '../types.ts';
@@ -41,7 +42,7 @@ describe('ranks', () => {
 });
 
 describe('achievements', () => {
-  const sentence = (id: string, pack: string, tags: string[] = []): Sentence => ({ id, text: id, score: 0, tags, pack });
+  const sentence = (id: string, pack: string, tags: string[] = []): Sentence => ({ id, text: id, score: 0, tags, pack, feedback: testFeedback });
   const sentences = new Map(
     [sentence('s-0', 'a'), sentence('irony', 'b', ['反諷']), sentence('self', 'b', ['自嘲']), sentence('joke', 'b', ['幽默'])].map((s) => [s.id, s]),
   );

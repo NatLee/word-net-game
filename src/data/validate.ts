@@ -1,5 +1,5 @@
 import { SCALE } from '../config.ts';
-import type { Sentence, SentencePack } from '../types.ts';
+import type { Sentence, SentenceFeedback, SentencePack } from '../types.ts';
 
 /** Longest sentence the card is laid out for, in characters. */
 export const MAX_TEXT_LENGTH = 60;
@@ -48,7 +48,7 @@ export function validatePack(raw: unknown, file: string): PackResult {
       fail(where, 'must be an object');
       return;
     }
-    const { id, text, score, tags = [], note } = item;
+    const { id, text, score, tags = [], note, feedback } = item;
     if (!nonEmptyString(id) || !ID_PATTERN.test(id)) fail(`${where}.id`, 'must be lowercase letters, digits and dashes');
     else if (seen.has(id)) fail(`${where}.id`, `duplicate id "${id}"`);
     else seen.add(id);
@@ -59,11 +59,21 @@ export function validatePack(raw: unknown, file: string): PackResult {
     }
     if (!Array.isArray(tags) || !tags.every(nonEmptyString)) fail(`${where}.tags`, 'must be an array of strings');
     if (note !== undefined && !nonEmptyString(note)) fail(`${where}.note`, 'must be a non-empty string when present');
+    if (!isRecord(feedback)) fail(`${where}.feedback`, 'must contain sentence-specific feedback');
+    else for (const key of ['hit', 'edge', 'higher', 'lower', 'neutral'] as const) {
+      const lines = feedback[key];
+      if (!Array.isArray(lines) || lines.length === 0 || !lines.every(nonEmptyString)) {
+        fail(`${where}.feedback.${key}`, 'must be a non-empty array of non-empty strings');
+      } else if (new Set(lines.map((line) => textKey(line.trim()))).size !== lines.length) {
+        fail(`${where}.feedback.${key}`, 'must not repeat the same line');
+      }
+    }
     sentences.push({
       id: id as string,
       text: typeof text === 'string' ? text.trim() : '',
       score: score as number,
       tags: Array.isArray(tags) ? (tags as string[]) : [],
+      feedback: feedback as SentenceFeedback,
       ...(nonEmptyString(note) ? { note: note.trim() } : {}),
       pack: raw.id as string,
     });

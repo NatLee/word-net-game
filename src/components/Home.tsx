@@ -29,9 +29,10 @@ interface HomeProps {
   onPack: (packId: string | null) => void;
   onStart: (mode: ModeId) => void;
   onDuo: () => void;
+  onChallenges: () => void;
 }
 
-export function Home({ name, total, xp, runs, dailyDone, dailyShareText, packs, packId, onPack, onStart, onDuo }: HomeProps) {
+export function Home({ name, total, xp, runs, dailyDone, dailyShareText, packs, packId, onPack, onStart, onDuo, onChallenges }: HomeProps) {
   const intoMilestone = total % MILESTONE_EVERY;
   const nextMilestone = total - intoMilestone + MILESTONE_EVERY;
 
@@ -63,6 +64,11 @@ export function Home({ name, total, xp, runs, dailyDone, dailyShareText, packs, 
       </div>
 
       <PackPicker packs={packs} value={packId} onChange={onPack} />
+
+      <button type="button" onClick={onChallenges} className="glass flex items-center justify-between gap-4 rounded-3xl p-5 text-left transition hover:bg-white/80 dark:hover:bg-white/10">
+        <span><span className="block font-bold">今天想挑戰哪一種讀心術？</span><span className="mt-1 block text-sm text-slate-600 dark:text-slate-300">辦公室翻譯、白開水品鑑、猜反後扳回來。查看條件與目前進度。</span></span>
+        <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-mood">成就挑戰<ChevronRight className="size-4" aria-hidden="true" /></span>
+      </button>
 
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {MODE_ORDER.map((mode, i) => {

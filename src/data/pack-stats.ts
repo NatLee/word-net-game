@@ -11,12 +11,14 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MOOD_BANDS } from '../config.ts';
 import { textKey } from './validate.ts';
+import type { SentenceFeedback } from '../types.ts';
 
 interface RawSentence {
   id: string;
   text: string;
   score: number;
   note?: string;
+  feedback: SentenceFeedback;
 }
 interface RawPack {
   id: string;
@@ -38,7 +40,7 @@ const bandOf = (score: number) => MOOD_BANDS.findIndex((b) => score <= b.upTo);
 const fixed = (n: number) => n.toFixed(2);
 
 const lines: string[] = ['# Sentence packs', ''];
-const header = ['題庫', '句數', '有解說', '平均', '最低', '最高', ...MOOD_BANDS.map((b) => b.label)];
+const header = ['題庫', '句數', '有解說', '專屬回應', '平均', '最低', '最高', ...MOOD_BANDS.map((b) => b.label)];
 lines.push(`| ${header.join(' | ')} |`, `|${header.map(() => '---').join('|')}|`);
 const all = packs.flatMap((p) => p.sentences.map((s) => ({ ...s, pack: p.id })));
 for (const row of [...packs.map((p) => ({ name: `${p.title}（${p.id}）`, list: p.sentences })), { name: '全部', list: all }]) {
@@ -48,6 +50,7 @@ for (const row of [...packs.map((p) => ({ name: `${p.title}（${p.id}）`, list:
     row.name,
     row.list.length,
     row.list.filter((s) => s.note).length,
+    row.list.reduce((sum, s) => sum + Object.values(s.feedback).reduce((n, lines) => n + lines.length, 0), 0),
     fixed(scores.reduce((a, b) => a + b, 0) / scores.length),
     fixed(Math.min(...scores)),
     fixed(Math.max(...scores)),
