@@ -1,6 +1,7 @@
 import { ArrowLeft, Flame, Heart, Lightbulb, Timer } from 'lucide-react';
 import { useEffect, useReducer, useRef, type Ref } from 'react';
 import { CLOCK_WARNING_SECONDS, MODES, RUSH_REVEAL_MS } from '../config.ts';
+import { feedbackFor } from '../game/feedback.ts';
 import { MODE_INFO, TIER_INFO } from '../game/labels.ts';
 import { formatScore } from '../game/scoring.ts';
 import { createSession, currentSentence, isLastRound, lastResult, reduce, totalRounds, type RoundResult, type Session } from '../game/session.ts';
@@ -26,6 +27,7 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
   const [session, dispatch] = useReducer(reduce, undefined, () => createSession(mode, queue));
   const sentence = currentSentence(session);
   const result = session.phase === 'revealed' ? lastResult(session) : undefined;
+  const feedback = result ? feedbackFor(result.sentence, result.guess, session.round) : undefined;
   const timed = session.timeLeftMs !== null;
 
   // Report each answer and the end of the run to the app (records, sounds, the summary screen).
@@ -138,6 +140,8 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
         {result &&
           [
             `${TIER_INFO[result.tier].label}！參考分數 ${formatScore(result.sentence.score)}，你猜 ${formatScore(result.guess)}，得到 ${result.points} 分。`,
+            feedback?.quip,
+            feedback?.hint,
             result.sentence.note,
           ]
             .filter(Boolean)
@@ -145,7 +149,7 @@ export function Play({ mode, queue, reducedMotion, onAnswer, onFinish, onQuit }:
       </div>
 
       {result ? (
-        <Result result={result} last={isLastRound(session)} timed={timed} nextRef={next} onNext={() => dispatch({ type: 'next' })} />
+        <Result result={result} feedback={feedback} last={isLastRound(session)} timed={timed} nextRef={next} onNext={() => dispatch({ type: 'next' })} />
       ) : (
         <div className="flex flex-col items-center gap-2">
           <Button variant="primary" onClick={() => dispatch({ type: 'lock' })} className="w-full max-w-xs py-3.5 text-lg">
@@ -204,12 +208,14 @@ function TimeBar({ timeLeftMs, totalMs }: { timeLeftMs: number; totalMs: number 
 
 function Result({
   result,
+  feedback,
   last,
   timed,
   nextRef,
   onNext,
 }: {
   result: RoundResult;
+  feedback: ReturnType<typeof feedbackFor>;
   last: boolean;
   timed: boolean;
   nextRef: Ref<HTMLButtonElement>;
@@ -236,6 +242,12 @@ function Result({
           )}
         </p>
       </div>
+      {feedback && (
+        <div className="mt-3 rounded-2xl bg-slate-900/5 p-3 text-sm dark:bg-white/5">
+          <p className="font-semibold">{feedback.quip}</p>
+          <p className="mt-1 text-slate-600 dark:text-slate-300">{feedback.hint}</p>
+        </div>
+      )}
       {result.lifeChange !== 0 && (
         <p className={`mt-3 flex items-center gap-2 text-sm font-semibold ${result.lifeChange < 0 ? TIER_STYLE.miss.text : TIER_STYLE.perfect.text}`}>
           <Heart className="size-4 fill-current" aria-hidden="true" />

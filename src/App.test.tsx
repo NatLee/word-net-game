@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App.tsx';
 import { DUO, MODES, RUSH_REVEAL_MS } from './config.ts';
+import { feedbackFor } from './game/feedback.ts';
 import { storageKey, writeStored } from './lib/storage.ts';
 import { media } from './test/setup.ts';
 import type { Annotation, Sentence, SentencePack } from './types.ts';
@@ -114,6 +115,31 @@ describe('a classic run', () => {
     const live = [...container.querySelectorAll('[aria-live="polite"]')].find((el) => el.textContent?.includes('參考分數'));
     expect(live).toHaveTextContent('完美！參考分數 -0.60，你猜 -0.50，得到 100 分。「真開心」是反話。');
     expect(screen.getAllByText('「真開心」是反話。').length).toBeGreaterThan(0); // shown on screen too
+  });
+
+  it('reveals a situational joke, correction and sentence note together, including the live announcement', async () => {
+    const source: Sentence = { id: 'ironic', text: '太好了，又得加班。', score: -0.8, tags: ['反諷'], note: '「太好了」是反話。', pack: 'test' };
+    writeStored('name', '小明');
+    const user = userEvent.setup();
+    const { container } = render(<App packs={[pack('test', '測試', [source])]} now={now} />);
+    const feedback = feedbackFor(source, 1, 0)!;
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    expect(screen.queryByText(feedback.quip)).not.toBeInTheDocument();
+    await answer(user, '9');
+    expect(screen.getByText(feedback.quip)).toBeVisible();
+    expect(screen.getByText(feedback.hint)).toBeVisible();
+    expect(screen.getByText(source.note!)).toBeVisible();
+    const live = [...container.querySelectorAll('[aria-live="polite"]')].find((el) => el.textContent?.includes('參考分數'));
+    expect(live).toHaveTextContent(feedback.quip);
+    expect(live).toHaveTextContent(feedback.hint);
+    expect(live).toHaveTextContent(source.note!);
+  });
+
+  it('still offers feedback for sentences without a note', async () => {
+    const user = setup();
+    await user.click(screen.getByRole('button', { name: /開始經典/ }));
+    await answer(user, '1');
+    expect(screen.getByText('參考偏樂觀，你猜成悲觀；往開心那側靠一些。')).toBeVisible();
   });
 
   it('moves the net where the player taps the scale', async () => {
@@ -230,6 +256,30 @@ describe('survival', () => {
 const old = (over: Partial<Annotation> = {}): Annotation => ({ sentenceId: 'x', text: 'x', guess: 1, reference: 0, mode: 'classic', name: '小明', points: 0, at: 'then', ...over });
 
 describe('duo', () => {
+  it('waits for both guesses, then gives each player their own correction', async () => {
+    const source: Sentence = { id: 'neutral', text: '今天照常開門。', score: 0, tags: [], pack: 'test' };
+    writeStored('name', '小明');
+    const user = userEvent.setup();
+    const { container } = render(<App packs={[pack('test', '測試', [source])]} now={now} />);
+    await user.click(screen.getByRole('button', { name: /開始雙人對戰/ }));
+    await user.type(screen.getByLabelText('對手的名字'), '阿華');
+    await user.click(screen.getByRole('button', { name: '開始對戰' }));
+    await answer(user, '9');
+    expect(screen.queryByRole('list', { name: '情緒判讀提示' })).not.toBeInTheDocument();
+    await answer(user, '1');
+    const hints = within(screen.getByRole('list', { name: '情緒判讀提示' })).getAllByRole('listitem');
+    expect(hints[0]).toHaveTextContent('小明');
+    expect(hints[0]).toHaveTextContent('參考偏中立，你猜成樂觀；往難過那側靠一些。');
+    expect(hints[1]).toHaveTextContent('阿華');
+    expect(hints[1]).toHaveTextContent('參考偏中立，你猜成悲觀；往開心那側靠一些。');
+    const live = [...container.querySelectorAll('[aria-live="polite"]')].find((el) => el.textContent?.includes('參考分數'));
+    for (let i = 0; i < 2; i++) {
+      const feedback = feedbackFor(source, i === 0 ? 1 : -1, i)!;
+      expect(live).toHaveTextContent(feedback.quip);
+      expect(live).toHaveTextContent(feedback.hint);
+    }
+  });
+
   it('lets two players take turns, hides the first net, and keeps the guest out of the owner count', async () => {
     const user = setup();
     await user.click(screen.getByRole('button', { name: /開始雙人對戰/ }));
